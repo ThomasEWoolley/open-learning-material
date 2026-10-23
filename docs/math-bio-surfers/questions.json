@@ -1,0 +1,1770 @@
+{
+  "title": "Math Bio Surfers",
+  "version": 1,
+  "runQuestions": 12,
+  "passAccuracy": 0.75,
+  "levels": [
+    {
+      "id": 1,
+      "chapter": 2,
+      "title": "Things you have forgotten",
+      "short": "Foundations",
+      "subtitle": "Build models, scale equations and read phase planes",
+      "pages": "6–23",
+      "colour": "#56b4e9"
+    },
+    {
+      "id": 2,
+      "chapter": 3,
+      "title": "Population modelling",
+      "short": "Populations",
+      "subtitle": "Growth, outbreaks, discrete maps and cycles",
+      "pages": "24–46",
+      "colour": "#e69f00"
+    },
+    {
+      "id": 3,
+      "chapter": 4,
+      "title": "Spatial systems",
+      "short": "Spatial systems",
+      "subtitle": "Diffusion, taxis and travelling waves",
+      "pages": "47–59",
+      "colour": "#cc79a7"
+    },
+    {
+      "id": 4,
+      "chapter": 5,
+      "title": "Pattern Formation",
+      "short": "Pattern formation",
+      "subtitle": "Morphogen gradients and the Turing instability",
+      "pages": "60–78",
+      "colour": "#f0e442"
+    }
+  ],
+  "gates": [
+    {
+      "id": "L1-Q01",
+      "level": 1,
+      "section": "2",
+      "difficulty": 1,
+      "prompt": "What makes an ODE system autonomous?",
+      "options": [
+        "No explicit dependence on time",
+        "All solutions are constant",
+        "It has only one variable"
+      ],
+      "answer": 0,
+      "why": "An autonomous vector field depends on the state, rather than explicitly on time. Its solutions can still change with time.",
+      "source": "Course notes §2"
+    },
+    {
+      "id": "L1-Q02",
+      "level": 1,
+      "section": "2.2",
+      "difficulty": 1,
+      "prompt": "For u + v → 2u at rate R, what is the reaction rate?",
+      "options": [
+        "Ruv",
+        "R(u + v)",
+        "Ru²"
+      ],
+      "answer": 0,
+      "why": "The Law of Mass Action multiplies the concentrations of the reactants. Here each reactant appears once, giving Ruv.",
+      "source": "Course notes §2.2"
+    },
+    {
+      "id": "L1-Q03",
+      "level": 1,
+      "section": "2.2",
+      "difficulty": 2,
+      "prompt": "For u + v → 2u at rate R, what are the ODE contributions?",
+      "options": [
+        "u̇ = Ruv; v̇ = −Ruv",
+        "u̇ = 2Ruv; v̇ = −Ruv",
+        "u̇ = −Ruv; v̇ = Ruv"
+      ],
+      "answer": 0,
+      "why": "Use the net stoichiometric change: one u is gained and one v is lost per reaction. Two u are produced, but one was consumed.",
+      "source": "Course notes §2.2"
+    },
+    {
+      "id": "L1-Q04",
+      "level": 1,
+      "section": "2.2",
+      "difficulty": 2,
+      "prompt": "For u̇ = Ruv and v̇ = −Ruv, which quantity is conserved?",
+      "options": [
+        "u + v",
+        "u − v",
+        "uv"
+      ],
+      "answer": 0,
+      "why": "Adding the equations gives d(u + v)/dt = 0. The conserved total lets us replace v by K − u.",
+      "source": "Course notes §2.2"
+    },
+    {
+      "id": "L1-Q05",
+      "level": 1,
+      "section": "2.2",
+      "difficulty": 2,
+      "prompt": "For 2u → v at rate k, the contribution to u̇ is…",
+      "options": [
+        "−2ku²",
+        "−ku²",
+        "+2ku²"
+      ],
+      "answer": 0,
+      "why": "In the deterministic mass-action convention used in the notes, the reaction rate is ku². Each reaction removes two u.",
+      "source": "Course notes §2.2"
+    },
+    {
+      "id": "L1-Q06",
+      "level": 1,
+      "section": "2.3",
+      "difficulty": 1,
+      "prompt": "Why non-dimensionalise a model?",
+      "options": [
+        "Expose scales and reduce parameters",
+        "Remove all initial conditions",
+        "Make all solutions constant"
+      ],
+      "answer": 0,
+      "why": "Non-dimensionalisation compares quantities with characteristic scales. It often reveals the parameter combinations that control the dynamics.",
+      "source": "Course notes §2.3"
+    },
+    {
+      "id": "L1-Q07",
+      "level": 1,
+      "section": "2.3.1",
+      "difficulty": 2,
+      "prompt": "For u̇ = ru(1 − u/K), take U = u/K and τ = rt. Then…",
+      "options": [
+        "dU/dτ = U(1 − U)",
+        "dU/dτ = rU(1 − U)",
+        "dU/dτ = U(1 − U/K)"
+      ],
+      "answer": 0,
+      "why": "The chain rule gives u̇ = Kr dU/dτ. Dividing by Kr removes the dimensional parameters r and K.",
+      "source": "Course notes §2.3.1"
+    },
+    {
+      "id": "L1-Q08",
+      "level": 1,
+      "section": "2.3.1",
+      "difficulty": 2,
+      "prompt": "If U = u/K and u(0) = u₀, what is U(0)?",
+      "options": [
+        "u₀/K",
+        "Ku₀",
+        "u₀"
+      ],
+      "answer": 0,
+      "why": "Initial conditions must be scaled as well as the differential equation: U(0) = u(0)/K.",
+      "source": "Course notes §2.3.1"
+    },
+    {
+      "id": "L1-Q09",
+      "level": 1,
+      "section": "2.3.2",
+      "difficulty": 3,
+      "prompt": "For u̇ = k₀ + k₁u + k₂u² with k₁,k₂ > 0, balance derivative, linear and quadratic terms. The scales are…",
+      "options": [
+        "[t] = 1/k₁; [u] = k₁/k₂",
+        "[t] = k₁; [u] = k₂/k₁",
+        "[t] = 1/k₂; [u] = k₀"
+      ],
+      "answer": 0,
+      "why": "The balances [u]/[t] = k₁[u] = k₂[u]² give [t] = 1/k₁ and [u] = k₁/k₂.",
+      "source": "Course notes §2.3.2"
+    },
+    {
+      "id": "L1-Q10",
+      "level": 1,
+      "section": "2.4",
+      "difficulty": 1,
+      "prompt": "A steady state uₛ of u̇ = f(u) satisfies…",
+      "options": [
+        "f(uₛ) = 0",
+        "f′(uₛ) = 0",
+        "uₛ = 0"
+      ],
+      "answer": 0,
+      "why": "A steady state has zero rate of change. It need not be zero, and its derivative need not vanish.",
+      "source": "Course notes §2.4"
+    },
+    {
+      "id": "L1-Q11",
+      "level": 1,
+      "section": "2.5",
+      "difficulty": 1,
+      "prompt": "For a scalar ODE, f′(uₛ) < 0 implies…",
+      "options": [
+        "Local asymptotic stability",
+        "Instability",
+        "A periodic orbit"
+      ],
+      "answer": 0,
+      "why": "A small perturbation obeys ε̇ ≈ f′(uₛ)ε. A negative coefficient makes it decay exponentially.",
+      "source": "Course notes §2.5"
+    },
+    {
+      "id": "L1-Q12",
+      "level": 1,
+      "section": "2.5",
+      "difficulty": 3,
+      "prompt": "If f′(uₛ) = 0, what does linearisation tell us?",
+      "options": [
+        "Higher-order terms are needed",
+        "The steady state is stable",
+        "The steady state is unstable"
+      ],
+      "answer": 0,
+      "why": "A zero linear coefficient is inconclusive. For example, u̇ = −u³ is attracting at zero, whereas u̇ = u³ is repelling.",
+      "source": "Course notes §2.5"
+    },
+    {
+      "id": "L1-Q13",
+      "level": 1,
+      "section": "2.5",
+      "difficulty": 2,
+      "prompt": "For a real 2 × 2 Jacobian J, local asymptotic stability is guaranteed by…",
+      "options": [
+        "tr(J) < 0 and det(J) > 0",
+        "tr(J) > 0 and det(J) > 0",
+        "det(J) < 0"
+      ],
+      "answer": 0,
+      "why": "The characteristic polynomial is λ² − tr(J)λ + det(J). Both eigenvalues have negative real parts under these strict inequalities.",
+      "source": "Course notes §2.5"
+    },
+    {
+      "id": "L1-Q14",
+      "level": 1,
+      "section": "2.5",
+      "difficulty": 2,
+      "prompt": "If det(J) < 0 for a real 2 × 2 system, the steady state is a…",
+      "options": [
+        "Saddle",
+        "Stable node",
+        "Centre"
+      ],
+      "answer": 0,
+      "why": "A negative determinant means the eigenvalues are real with opposite signs. Perturbations grow in one eigendirection and decay in the other.",
+      "source": "Course notes §2.5"
+    },
+    {
+      "id": "L1-Q15",
+      "level": 1,
+      "section": "2.5",
+      "difficulty": 2,
+      "prompt": "A Jacobian has eigenvalues −1 ± 2i. What is the local behaviour?",
+      "options": [
+        "Stable spiral",
+        "Unstable spiral",
+        "Saddle"
+      ],
+      "answer": 0,
+      "why": "The negative real part produces decay; the nonzero imaginary part produces rotation in the linearised phase plane.",
+      "source": "Course notes §2.5"
+    },
+    {
+      "id": "L1-Q16",
+      "level": 1,
+      "section": "2.5",
+      "difficulty": 3,
+      "prompt": "Purely imaginary eigenvalues of a nonlinear system imply…",
+      "options": [
+        "Linearisation alone is inconclusive",
+        "A nonlinear centre is guaranteed",
+        "An unstable node is guaranteed"
+      ],
+      "answer": 0,
+      "why": "The linearised system has a centre, but nonlinear terms can make the full system attracting or repelling. Zero real parts require further analysis.",
+      "source": "Course notes §2.5"
+    },
+    {
+      "id": "L1-Q17",
+      "level": 1,
+      "section": "2.5",
+      "difficulty": 2,
+      "prompt": "For f = −u + u²v and g = β − u²v, with β > 0, the steady state is…",
+      "options": [
+        "(β, 1/β)",
+        "(1/β, β)",
+        "(β, β)"
+      ],
+      "answer": 0,
+      "why": "Adding f = 0 and g = 0 gives uₛ = β. Substituting into g = 0 gives vₛ = 1/β.",
+      "source": "Course notes §2.5"
+    },
+    {
+      "id": "L1-Q18",
+      "level": 1,
+      "section": "2.5",
+      "difficulty": 3,
+      "prompt": "For f = −u + u²v and g = β − u²v, tr(J) = 1 − β² and det(J) = β². Stability requires…",
+      "options": [
+        "β > 1",
+        "0 < β < 1",
+        "Every β > 0"
+      ],
+      "answer": 0,
+      "why": "The determinant is positive for β > 0, so the trace must be negative: 1 − β² < 0. At β = 1, linearisation is inconclusive.",
+      "source": "Course notes §2.5"
+    },
+    {
+      "id": "L1-Q19",
+      "level": 1,
+      "section": "2.6.1",
+      "difficulty": 2,
+      "prompt": "For H(x) = xᵐ/(1 + xⁿ), x > 0 and m,n > 0, what happens as x → ∞ when m < n?",
+      "options": [
+        "H(x) → 0",
+        "H(x) → 1",
+        "H(x) → ∞"
+      ],
+      "answer": 0,
+      "why": "For large x, H(x) behaves like x^(m − n). A negative exponent gives decay to zero.",
+      "source": "Course notes §2.6.1"
+    },
+    {
+      "id": "L1-Q20",
+      "level": 1,
+      "section": "2.5",
+      "difficulty": 1,
+      "prompt": "A bifurcation occurs when varying a parameter changes…",
+      "options": [
+        "The number or stability of steady states",
+        "Only the units used to measure time",
+        "Only the initial condition"
+      ],
+      "answer": 0,
+      "why": "A bifurcation is a qualitative change in the dynamics as a parameter varies. The notes focus on changes in the number or stability of steady states.",
+      "source": "Course notes §2.5"
+    },
+    {
+      "id": "L1-Q21",
+      "level": 1,
+      "section": "2.7.2",
+      "difficulty": 1,
+      "prompt": "A u-nullcline of u̇ = f(u,v), v̇ = g(u,v) is…",
+      "options": [
+        "The curve f(u,v) = 0",
+        "The curve u = 0",
+        "Any solution trajectory"
+      ],
+      "answer": 0,
+      "why": "On a u-nullcline the u-component of velocity is zero. The v-component may still be nonzero.",
+      "source": "Course notes §2.7.2"
+    },
+    {
+      "id": "L1-Q22",
+      "level": 1,
+      "section": "2.7.2",
+      "difficulty": 2,
+      "prompt": "Away from a steady state, motion on the u-nullcline is…",
+      "options": [
+        "Vertical in the (u,v) plane",
+        "Horizontal in the (u,v) plane",
+        "Always zero"
+      ],
+      "answer": 0,
+      "why": "The horizontal component u̇ is zero on the u-nullcline. Only v changes, so the velocity is vertical.",
+      "source": "Course notes §2.7.2"
+    },
+    {
+      "id": "L1-Q23",
+      "level": 1,
+      "section": "2.7.2",
+      "difficulty": 1,
+      "prompt": "Where do steady states lie in a two-variable phase plane?",
+      "options": [
+        "At intersections of both nullclines",
+        "At every point on either nullcline",
+        "Only at the origin"
+      ],
+      "answer": 0,
+      "why": "Both derivatives must vanish at a steady state, so both nullcline conditions must hold together.",
+      "source": "Course notes §2.7.2"
+    },
+    {
+      "id": "L1-Q24",
+      "level": 1,
+      "section": "2.7.2",
+      "difficulty": 3,
+      "prompt": "For u̇ = v − (u − 2)(u − 3), what is the sign of u̇ above its nullcline?",
+      "options": [
+        "Positive",
+        "Negative",
+        "Always zero"
+      ],
+      "answer": 0,
+      "why": "Above v = (u − 2)(u − 3), the value of v exceeds the subtracted term. Thus u̇ > 0 and motion is to the right.",
+      "source": "Course notes §2.7.2"
+    },
+    {
+      "id": "L2-Q01",
+      "level": 2,
+      "section": "3",
+      "difficulty": 1,
+      "prompt": "For a closed population, the population balance is…",
+      "options": [
+        "Birth rate minus death rate",
+        "Birth rate plus death rate",
+        "Immigration rate only"
+      ],
+      "answer": 0,
+      "why": "A closed population has no immigration or emigration. Births add members and deaths remove them.",
+      "source": "Course notes §3"
+    },
+    {
+      "id": "L2-Q02",
+      "level": 2,
+      "section": "3.1",
+      "difficulty": 1,
+      "prompt": "For u̇ = ug(u), g(u) is the…",
+      "options": [
+        "Intrinsic growth rate",
+        "Total population change",
+        "Carrying capacity"
+      ],
+      "answer": 0,
+      "why": "The notes call g(u) the intrinsic growth rate. For u > 0 it is the rate of change per individual, u̇/u.",
+      "source": "Course notes §3.1"
+    },
+    {
+      "id": "L2-Q03",
+      "level": 2,
+      "section": "3.1",
+      "difficulty": 2,
+      "prompt": "In the Malthus model u̇ = (b − d)u, b < d gives…",
+      "options": [
+        "Exponential decay for u₀ > 0",
+        "Exponential growth for u₀ > 0",
+        "Logistic saturation"
+      ],
+      "answer": 0,
+      "why": "The solution is u(t) = u₀ exp((b − d)t). Its exponent is negative when deaths exceed births.",
+      "source": "Course notes §3.1"
+    },
+    {
+      "id": "L2-Q04",
+      "level": 2,
+      "section": "3.1",
+      "difficulty": 1,
+      "prompt": "In u̇ = ru(1 − u/K), with r,K > 0, K represents…",
+      "options": [
+        "The carrying capacity",
+        "The initial population",
+        "The doubling time"
+      ],
+      "answer": 0,
+      "why": "The positive steady state is u = K. Growth is positive below K and negative above K.",
+      "source": "Course notes §3.1"
+    },
+    {
+      "id": "L2-Q05",
+      "level": 2,
+      "section": "3.1",
+      "difficulty": 2,
+      "prompt": "For logistic growth with r,K > 0 and 0 < u < K, u̇ is…",
+      "options": [
+        "Positive",
+        "Negative",
+        "Zero"
+      ],
+      "answer": 0,
+      "why": "Both u and 1 − u/K are positive, so the population increases towards K.",
+      "source": "Course notes §3.1"
+    },
+    {
+      "id": "L2-Q06",
+      "level": 2,
+      "section": "3.1",
+      "difficulty": 2,
+      "prompt": "At which population is the logistic total growth ru(1 − u/K) largest?",
+      "options": [
+        "u = K/2",
+        "u = K",
+        "u = 0"
+      ],
+      "answer": 0,
+      "why": "Differentiating the growth function gives r(1 − 2u/K). Its maximum is at u = K/2, where the second derivative is negative.",
+      "source": "Course notes §3.1"
+    },
+    {
+      "id": "L2-Q07",
+      "level": 2,
+      "section": "3.1",
+      "difficulty": 1,
+      "prompt": "The budworm predation term BN²/(A² + N²) tends to what as N → ∞?",
+      "options": [
+        "B",
+        "0",
+        "∞"
+      ],
+      "answer": 0,
+      "why": "Predation saturates: divide numerator and denominator by N² to obtain B/(A²/N² + 1).",
+      "source": "Course notes §3.1"
+    },
+    {
+      "id": "L2-Q08",
+      "level": 2,
+      "section": "3.1",
+      "difficulty": 2,
+      "prompt": "At low N, BN²/(A² + N²) behaves like…",
+      "options": [
+        "(B/A²)N²",
+        "BN",
+        "B/N²"
+      ],
+      "answer": 0,
+      "why": "When N is much smaller than A, the denominator is approximately A². Predation is therefore quadratic at low population density.",
+      "source": "Course notes §3.1"
+    },
+    {
+      "id": "L2-Q09",
+      "level": 2,
+      "section": "3.1",
+      "difficulty": 3,
+      "prompt": "For the budworm model, using N = Au and t = (A/B)τ gives r =…",
+      "options": [
+        "RA/B",
+        "RB/A",
+        "RAB"
+      ],
+      "answer": 0,
+      "why": "After substitution, dN/dt = B du/dτ. Dividing by B makes the logistic coefficient RA/B and the dimensionless capacity K/A.",
+      "source": "Course notes §3.1"
+    },
+    {
+      "id": "L2-Q10",
+      "level": 2,
+      "section": "3.1",
+      "difficulty": 3,
+      "prompt": "Why can a large budworm outbreak persist after a small disturbance?",
+      "options": [
+        "Multiple attracting states may exist",
+        "Every disturbance changes K permanently",
+        "The model has no equilibria"
+      ],
+      "answer": 0,
+      "why": "For some parameters the growth and predation curves yield two attracting positive states separated by an unstable threshold. A sufficiently large perturbation can switch the attracting state.",
+      "source": "Course notes §3.1"
+    },
+    {
+      "id": "L2-Q11",
+      "level": 2,
+      "section": "3.1.1",
+      "difficulty": 1,
+      "prompt": "In the closed SIR model, S + I + R is…",
+      "options": [
+        "Constant",
+        "Increasing at rate rSI",
+        "Decreasing at rate aI"
+      ],
+      "answer": 0,
+      "why": "Adding Ṡ = −rSI, İ = rSI − aI and Ṙ = aI cancels all transfers between compartments.",
+      "source": "Course notes §3.1.1"
+    },
+    {
+      "id": "L2-Q12",
+      "level": 2,
+      "section": "3.1.1",
+      "difficulty": 2,
+      "prompt": "For İ = rSI − aI with I > 0, infectives increase when…",
+      "options": [
+        "S > a/r",
+        "S < a/r",
+        "S > r/a"
+      ],
+      "answer": 0,
+      "why": "Factor İ = I(rS − a). Since I > 0, its sign is the sign of rS − a.",
+      "source": "Course notes §3.1.1"
+    },
+    {
+      "id": "L2-Q13",
+      "level": 2,
+      "section": "3.1.1",
+      "difficulty": 2,
+      "prompt": "Using the notes’ notation, the reproduction number is…",
+      "options": [
+        "ρ = rS₀/a",
+        "ρ = aS₀/r",
+        "ρ = r/(aS₀)"
+      ],
+      "answer": 0,
+      "why": "The initial growth condition rS₀ > a can be written ρ > 1, with ρ = rS₀/a. This uses the density-dependent incidence rSI in the notes.",
+      "source": "Course notes §3.1.1"
+    },
+    {
+      "id": "L2-Q14",
+      "level": 2,
+      "section": "3.1.1",
+      "difficulty": 3,
+      "prompt": "If r = 0.002 per person per day, S₀ = 800 and a = 1 per day, ρ equals…",
+      "options": [
+        "1.6",
+        "0.625",
+        "1600"
+      ],
+      "answer": 0,
+      "why": "ρ = rS₀/a = 0.002 × 800 / 1 = 1.6. With I₀ > 0 the number of infectives initially increases.",
+      "source": "Course notes §3.1.1"
+    },
+    {
+      "id": "L2-Q15",
+      "level": 2,
+      "section": "3.1.1",
+      "difficulty": 2,
+      "prompt": "During an SIR outbreak with ρ > 1, infectives peak when…",
+      "options": [
+        "S = a/r",
+        "S = 0",
+        "R = 0"
+      ],
+      "answer": 0,
+      "why": "At an interior maximum İ = 0. Since I > 0, this requires rS − a = 0.",
+      "source": "Course notes §3.1.1"
+    },
+    {
+      "id": "L2-Q16",
+      "level": 2,
+      "section": "3.1.1",
+      "difficulty": 3,
+      "prompt": "For Ṡ = −rSI and İ = rSI − aI, dI/dS is…",
+      "options": [
+        "−1 + a/(rS)",
+        "1 − a/(rS)",
+        "−1 + rS/a"
+      ],
+      "answer": 0,
+      "why": "Divide İ by Ṡ where S,I > 0: (rSI − aI)/(−rSI) = −1 + a/(rS).",
+      "source": "Course notes §3.1.1"
+    },
+    {
+      "id": "L2-Q17",
+      "level": 2,
+      "section": "3.2",
+      "difficulty": 1,
+      "prompt": "A steady state N* of Nₜ₊₁ = f(Nₜ) satisfies…",
+      "options": [
+        "f(N*) = N*",
+        "f(N*) = 0",
+        "f′(N*) = 0"
+      ],
+      "answer": 0,
+      "why": "A discrete steady state is unchanged by one iteration. It is an intersection of the graph of f with the identity line.",
+      "source": "Course notes §3.2"
+    },
+    {
+      "id": "L2-Q18",
+      "level": 2,
+      "section": "3.2.2",
+      "difficulty": 2,
+      "prompt": "A fixed point of a scalar map is locally asymptotically stable if…",
+      "options": [
+        "|f′(N*)| < 1",
+        "f′(N*) < 0 only",
+        "f′(N*) > 1"
+      ],
+      "answer": 0,
+      "why": "The perturbation satisfies εₜ₊₁ ≈ f′(N*)εₜ. Its magnitude shrinks when the multiplier has modulus less than one.",
+      "source": "Course notes §3.2.2"
+    },
+    {
+      "id": "L2-Q19",
+      "level": 2,
+      "section": "3.2.2",
+      "difficulty": 2,
+      "prompt": "If f′(N*) = −0.6, a small perturbation…",
+      "options": [
+        "Alternates sides and decays",
+        "Alternates sides and grows",
+        "Decays without alternating sides"
+      ],
+      "answer": 0,
+      "why": "The negative multiplier reverses the sign on each iteration, and its modulus 0.6 makes the perturbation decay.",
+      "source": "Course notes §3.2.2"
+    },
+    {
+      "id": "L2-Q20",
+      "level": 2,
+      "section": "3.2.2",
+      "difficulty": 3,
+      "prompt": "For f(N) = rN(1 − N), f′ at N* = 1 − 1/r equals…",
+      "options": [
+        "2 − r",
+        "r − 2",
+        "1 − r"
+      ],
+      "answer": 0,
+      "why": "Since f′(N) = r − 2rN, substitution gives r − 2r(1 − 1/r) = 2 − r.",
+      "source": "Course notes §3.2.2"
+    },
+    {
+      "id": "L2-Q21",
+      "level": 2,
+      "section": "3.2.2",
+      "difficulty": 2,
+      "prompt": "The positive fixed point of the logistic map is locally asymptotically stable for…",
+      "options": [
+        "1 < r < 3",
+        "0 < r < 1",
+        "r > 3"
+      ],
+      "answer": 0,
+      "why": "The state 1 − 1/r is positive for r > 1. Stability requires |2 − r| < 1, giving 1 < r < 3.",
+      "source": "Course notes §3.2.2"
+    },
+    {
+      "id": "L2-Q22",
+      "level": 2,
+      "section": "3.2.3",
+      "difficulty": 3,
+      "prompt": "To find a genuine period-two orbit, solve f(f(N)) = N and then…",
+      "options": [
+        "Exclude fixed points of f",
+        "Keep only fixed points of f",
+        "Set f′(N) = 0"
+      ],
+      "answer": 0,
+      "why": "A fixed point is also fixed under two iterations. Genuine period-two points return after two steps but not after one.",
+      "source": "Course notes §3.2.3"
+    },
+    {
+      "id": "L2-Q23",
+      "level": 2,
+      "section": "3.2.3",
+      "difficulty": 3,
+      "prompt": "A period-two orbit {N₁,N₂} is attracting if…",
+      "options": [
+        "|f′(N₁)f′(N₂)| < 1",
+        "|f′(N₁) + f′(N₂)| < 1",
+        "Both N₁ and N₂ are less than 1"
+      ],
+      "answer": 0,
+      "why": "Apply the fixed-point criterion to f composed with itself. The chain rule gives the product of the derivatives around the cycle.",
+      "source": "Course notes §3.2.3"
+    },
+    {
+      "id": "L2-Q24",
+      "level": 2,
+      "section": "3.2.3",
+      "difficulty": 3,
+      "prompt": "For the logistic map, the period-two orbit is attracting in which interval?",
+      "options": [
+        "3 < r < 1 + √6",
+        "1 < r < 3",
+        "r > 4"
+      ],
+      "answer": 0,
+      "why": "The cycle multiplier is −r² + 2r + 4. Its modulus is less than one for 3 < r < 1 + √6, approximately 3.449.",
+      "source": "Course notes §3.2.3"
+    },
+    {
+      "id": "L3-Q01",
+      "level": 3,
+      "section": "4",
+      "difficulty": 1,
+      "prompt": "Diffusion models…",
+      "options": [
+        "Random movement",
+        "Movement up every chemical gradient",
+        "Births without movement"
+      ],
+      "answer": 0,
+      "why": "Diffusion describes random motion. Directed movement in response to a stimulus is taxis.",
+      "source": "Course notes §4"
+    },
+    {
+      "id": "L3-Q02",
+      "level": 3,
+      "section": "4",
+      "difficulty": 1,
+      "prompt": "Chemotaxis is directed movement in response to a…",
+      "options": [
+        "Chemical gradient",
+        "Population birth rate",
+        "Carrying capacity"
+      ],
+      "answer": 0,
+      "why": "Cells can move towards a chemoattractant or away from a chemorepellent. The direction depends on the chemical signal.",
+      "source": "Course notes §4"
+    },
+    {
+      "id": "L3-Q03",
+      "level": 3,
+      "section": "4.1",
+      "difficulty": 1,
+      "prompt": "The one-dimensional diffusion equation with constant D is…",
+      "options": [
+        "uₜ = Duₓₓ",
+        "uₜ = Duₓ",
+        "uₜ = Du²"
+      ],
+      "answer": 0,
+      "why": "Symmetric random movement yields a second spatial derivative. D > 0 sets the spreading rate.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "id": "L3-Q04",
+      "level": 3,
+      "section": "4.1",
+      "difficulty": 2,
+      "prompt": "What are the units of a diffusion coefficient?",
+      "options": [
+        "Length²/time",
+        "Length/time",
+        "Time/length²"
+      ],
+      "answer": 0,
+      "why": "uₜ has units of u/time, whereas uₓₓ has units of u/length². D therefore has units length²/time.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "id": "L3-Q05",
+      "level": 3,
+      "section": "4.1",
+      "difficulty": 2,
+      "prompt": "In the lattice diffusion derivation, the hopping rate is d =…",
+      "options": [
+        "D/(Δx)²",
+        "D/Δx",
+        "D(Δx)²"
+      ],
+      "answer": 0,
+      "why": "The discrete Laplacian contributes a factor (Δx)² after Taylor expansion. Taking d = D/(Δx)² keeps the continuum diffusion coefficient finite.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "id": "L3-Q06",
+      "level": 3,
+      "section": "4.1",
+      "difficulty": 2,
+      "prompt": "Why do first spatial derivatives cancel for symmetric nearest-neighbour hopping?",
+      "options": [
+        "Left and right contributions have opposite signs",
+        "All spatial derivatives are zero",
+        "The population is always uniform"
+      ],
+      "answer": 0,
+      "why": "The expansions of u(x − Δx) and u(x + Δx) have equal and opposite first-order terms. The second-order terms add.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "id": "L3-Q07",
+      "level": 3,
+      "section": "4.1",
+      "difficulty": 1,
+      "prompt": "Dirichlet boundary conditions specify…",
+      "options": [
+        "The value of u on a boundary",
+        "Only the value of uₓₓ",
+        "The total population everywhere"
+      ],
+      "answer": 0,
+      "why": "A Dirichlet condition prescribes the dependent variable, for example u(0,t) = S.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "id": "L3-Q08",
+      "level": 3,
+      "section": "4.1",
+      "difficulty": 1,
+      "prompt": "For pure diffusion, zero-flux conditions on [0,L] are…",
+      "options": [
+        "uₓ(0,t) = uₓ(L,t) = 0",
+        "u(0,t) = u(L,t) = 0",
+        "uₜ(0,t) = uₜ(L,t) = 0"
+      ],
+      "answer": 0,
+      "why": "The diffusive flux is −Duₓ. With D > 0, zero normal flux means zero normal derivative.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "id": "L3-Q09",
+      "level": 3,
+      "section": "4.1",
+      "difficulty": 2,
+      "prompt": "A Robin boundary condition specifies…",
+      "options": [
+        "A linear combination of u and its normal derivative",
+        "A second initial condition",
+        "Only the second spatial derivative"
+      ],
+      "answer": 0,
+      "why": "Robin conditions combine the value and first normal derivative, for example αu + βuₓ = γ at a boundary.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "id": "L3-Q10",
+      "level": 3,
+      "section": "4.1",
+      "difficulty": 2,
+      "prompt": "For pure diffusion with zero-flux boundaries, total mass…",
+      "options": [
+        "Remains constant",
+        "Always decreases",
+        "Always increases"
+      ],
+      "answer": 0,
+      "why": "Integrating uₜ = Duₓₓ over [0,L] gives d∫u dx/dt = D[uₓ]₀ᴸ = 0. There are no reaction sources or boundary losses.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "id": "L3-Q11",
+      "level": 3,
+      "section": "4.1",
+      "difficulty": 3,
+      "prompt": "For pure diffusion on [0,L], d∫₀ᴸu dx/dt equals…",
+      "options": [
+        "D[uₓ(L,t) − uₓ(0,t)]",
+        "D[u(L,t) − u(0,t)]",
+        "D∫₀ᴸu dx"
+      ],
+      "answer": 0,
+      "why": "Move the time derivative outside the spatial integral and integrate the second spatial derivative once.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "id": "L3-Q12",
+      "level": 3,
+      "section": "4.1",
+      "difficulty": 3,
+      "prompt": "A smooth steady state of pure diffusion on a connected finite interval with zero-flux boundaries is…",
+      "options": [
+        "Spatially constant",
+        "Always zero",
+        "Always sinusoidal"
+      ],
+      "answer": 0,
+      "why": "At steady state uₓₓ = 0, so u is linear in x. Zero derivatives at the boundaries force its slope to vanish; mass determines the constant.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "id": "L3-Q13",
+      "level": 3,
+      "section": "4.1",
+      "difficulty": 2,
+      "prompt": "Can zero-Dirichlet boundaries remove mass from a positive diffusing population?",
+      "options": [
+        "Yes, they can act as absorbing boundaries",
+        "No, all diffusion conserves mass in a finite domain",
+        "Only if D is negative"
+      ],
+      "answer": 0,
+      "why": "Fixing u = 0 allows outward diffusive flux at an edge. Mass conservation inside the domain requires zero flux, rather than zero concentration.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "id": "L3-Q14",
+      "level": 3,
+      "section": "4.2",
+      "difficulty": 2,
+      "prompt": "If a population moves with velocity V(x), its conservation equation is…",
+      "options": [
+        "uₜ = −∂ₓ(Vu)",
+        "uₜ = V(x)u",
+        "uₜ = −Vₓ only"
+      ],
+      "answer": 0,
+      "why": "The flux is Vu. Conservation requires rate of change = minus flux divergence; the product derivative includes spatial variation in both V and u.",
+      "source": "Course notes §4.2"
+    },
+    {
+      "id": "L3-Q15",
+      "level": 3,
+      "section": "4.2",
+      "difficulty": 3,
+      "prompt": "The notes write taxis as uₜ = ∂ₓ((Dₗ − Dᵣ)u). The velocity is…",
+      "options": [
+        "V = Dᵣ − Dₗ",
+        "V = Dₗ − Dᵣ",
+        "V = Dₗ + Dᵣ"
+      ],
+      "answer": 0,
+      "why": "Write the equation as uₜ = −∂ₓ(Vu). Rightward movement contributes positively to V and leftward movement negatively.",
+      "source": "Course notes §4.2"
+    },
+    {
+      "id": "L3-Q16",
+      "level": 3,
+      "section": "4.3",
+      "difficulty": 1,
+      "prompt": "A travelling wave keeps its shape while…",
+      "options": [
+        "Translating at constant speed",
+        "Its amplitude grows exponentially",
+        "Its spatial profile disappears"
+      ],
+      "answer": 0,
+      "why": "A travelling wave has the form u(x,t) = U(x − ct). Its profile is stationary in coordinates moving at speed c.",
+      "source": "Course notes §4.3"
+    },
+    {
+      "id": "L3-Q17",
+      "level": 3,
+      "section": "4.3.1",
+      "difficulty": 2,
+      "prompt": "For u(x,t) = U(z), z = x − ct, the time derivative is…",
+      "options": [
+        "uₜ = −cU′",
+        "uₜ = cU′",
+        "uₜ = U″"
+      ],
+      "answer": 0,
+      "why": "The chain rule gives uₜ = U′(z)zₜ = −cU′(z).",
+      "source": "Course notes §4.3.1"
+    },
+    {
+      "id": "L3-Q18",
+      "level": 3,
+      "section": "4.3.1",
+      "difficulty": 2,
+      "prompt": "Fisher’s equation combines diffusion with…",
+      "options": [
+        "Logistic growth",
+        "Only exponential death",
+        "A discrete-time update"
+      ],
+      "answer": 0,
+      "why": "The equation is uₜ = Duₓₓ + ru(1 − u/K). Movement spreads the population while local logistic growth fills the invaded region.",
+      "source": "Course notes §4.3.1"
+    },
+    {
+      "id": "L3-Q19",
+      "level": 3,
+      "section": "4.3.1",
+      "difficulty": 3,
+      "prompt": "The travelling-wave ODE for Fisher’s equation is…",
+      "options": [
+        "DU″ + cU′ + rU(1 − U/K) = 0",
+        "DU″ − cU′ + rU(1 − U/K) = 0",
+        "DU′ + cU″ = 0"
+      ],
+      "answer": 0,
+      "why": "Substitute uₜ = −cU′ and uₓₓ = U″, then move all terms to one side.",
+      "source": "Course notes §4.3.1"
+    },
+    {
+      "id": "L3-Q20",
+      "level": 3,
+      "section": "4.3.1",
+      "difficulty": 2,
+      "prompt": "For a right-moving Fisher invasion with c > 0, the profile connects…",
+      "options": [
+        "U(−∞) = K to U(+∞) = 0",
+        "U(−∞) = 0 to U(+∞) = K",
+        "U(−∞) = K to U(+∞) = K"
+      ],
+      "answer": 0,
+      "why": "Behind the front, at z → −∞, the population has reached K. Ahead, at z → +∞, the environment is unoccupied.",
+      "source": "Course notes §4.3.1"
+    },
+    {
+      "id": "L3-Q21",
+      "level": 3,
+      "section": "4.3.1",
+      "difficulty": 3,
+      "prompt": "For a nonnegative Fisher travelling front with D,r > 0, the minimum speed is…",
+      "options": [
+        "2√(Dr)",
+        "2Dr",
+        "√(D/r)"
+      ],
+      "answer": 0,
+      "why": "Linearising DU″ + cU′ + rU = 0 at the leading edge gives Dλ² + cλ + r = 0. Avoiding oscillatory sign changes requires c² ≥ 4Dr.",
+      "source": "Course notes §4.3.1"
+    },
+    {
+      "id": "L3-Q22",
+      "level": 3,
+      "section": "4.3.1",
+      "difficulty": 3,
+      "prompt": "If D = 4 and r = 1/4 in consistent units, the minimum Fisher speed is…",
+      "options": [
+        "2",
+        "1",
+        "4"
+      ],
+      "answer": 0,
+      "why": "Use c_min = 2√(Dr) = 2√(4 × 1/4) = 2. The carrying capacity K does not enter this speed.",
+      "source": "Course notes §4.3.1"
+    },
+    {
+      "id": "L3-Q23",
+      "level": 3,
+      "section": "4.3.1",
+      "difficulty": 3,
+      "prompt": "In Fisher’s travelling-wave phase plane, a front corresponds to…",
+      "options": [
+        "A heteroclinic connection between equilibria",
+        "Any closed orbit",
+        "A single constant equilibrium"
+      ],
+      "answer": 0,
+      "why": "With V = U′, the profile is an orbit connecting (K,0) to (0,0). Its end states are distinct equilibria.",
+      "source": "Course notes §4.3.1"
+    },
+    {
+      "id": "L3-Q24",
+      "level": 3,
+      "section": "4.3",
+      "difficulty": 2,
+      "prompt": "With local reaction f(u), zero-flux boundaries guarantee conservation of ∫u dx only if…",
+      "options": [
+        "The integrated reaction contributes no net change",
+        "The diffusion coefficient is positive",
+        "The interval is finite"
+      ],
+      "answer": 0,
+      "why": "Zero boundary flux removes the diffusion contribution to the mass balance, but ∫f(u) dx can still create or remove population.",
+      "source": "Course notes §4.3"
+    },
+    {
+      "id": "L4-Q01",
+      "level": 4,
+      "section": "5.1",
+      "difficulty": 1,
+      "prompt": "The French flag mechanism assigns cell fates using…",
+      "options": [
+        "Thresholds in morphogen concentration",
+        "Only the age of each cell",
+        "Identical concentrations everywhere"
+      ],
+      "answer": 0,
+      "why": "Different ranges of a spatial morphogen gradient specify different responses. The flag colours represent these distinct fates.",
+      "source": "Course notes §5.1"
+    },
+    {
+      "id": "L4-Q02",
+      "level": 4,
+      "section": "5.1",
+      "difficulty": 1,
+      "prompt": "In uₜ = Duₓₓ − γu, γu describes…",
+      "options": [
+        "Linear morphogen decay",
+        "Morphogen production at every point",
+        "Directed movement"
+      ],
+      "answer": 0,
+      "why": "For γ > 0, −γu removes morphogen at a rate proportional to its concentration. Diffusion spreads the morphogen from its source.",
+      "source": "Course notes §5.1"
+    },
+    {
+      "id": "L4-Q03",
+      "level": 4,
+      "section": "5.1",
+      "difficulty": 2,
+      "prompt": "What is the diffusion–decay length scale for D,γ > 0?",
+      "options": [
+        "ℓ = √(D/γ)",
+        "ℓ = D/γ",
+        "ℓ = √(γ/D)"
+      ],
+      "answer": 0,
+      "why": "Balancing D u/ℓ² with γu gives ℓ² = D/γ. This has the units of length.",
+      "source": "Course notes §5.1"
+    },
+    {
+      "id": "L4-Q04",
+      "level": 4,
+      "section": "5.1",
+      "difficulty": 2,
+      "prompt": "At fixed γ, multiplying D by four makes ℓ = √(D/γ)…",
+      "options": [
+        "Twice as large",
+        "Four times as large",
+        "Half as large"
+      ],
+      "answer": 0,
+      "why": "The length scale depends on the square root of D: √(4D/γ) = 2√(D/γ).",
+      "source": "Course notes §5.1"
+    },
+    {
+      "id": "L4-Q05",
+      "level": 4,
+      "section": "5.1",
+      "difficulty": 3,
+      "prompt": "For D u″ − γu = 0, u(0) = S and u′(L) = 0, the steady profile is…",
+      "options": [
+        "S cosh((L − x)/ℓ) / cosh(L/ℓ)",
+        "S sinh((L − x)/ℓ)",
+        "S exp(x/ℓ)"
+      ],
+      "answer": 0,
+      "why": "With ℓ = √(D/γ), this cosh profile solves the steady equation, equals S at x = 0 and has zero derivative at x = L.",
+      "source": "Course notes §5.1"
+    },
+    {
+      "id": "L4-Q06",
+      "level": 4,
+      "section": "5.1",
+      "difficulty": 2,
+      "prompt": "Far from the reflecting end, when L ≫ ℓ, the source gradient is approximately…",
+      "options": [
+        "u(x) ≈ S exp(−x/ℓ)",
+        "u(x) ≈ S exp(x/ℓ)",
+        "u(x) ≈ Sx²"
+      ],
+      "answer": 0,
+      "why": "The finite-interval cosh ratio approaches a decaying exponential when the reflecting boundary is sufficiently far away.",
+      "source": "Course notes §5.1"
+    },
+    {
+      "id": "L4-Q07",
+      "level": 4,
+      "section": "5.1.1",
+      "difficulty": 2,
+      "prompt": "In the notes’ limb-bud example, adding a second polarising region tests…",
+      "options": [
+        "Predictions of a morphogen-source mechanism",
+        "Whether diffusion is always absent",
+        "Whether all cells have the same fate"
+      ],
+      "answer": 0,
+      "why": "The extra source changes the concentration profile. The observed additional digit identities test predictions of concentration-dependent specification.",
+      "source": "Course notes §5.1.1"
+    },
+    {
+      "id": "L4-Q08",
+      "level": 4,
+      "section": "5.2.1",
+      "difficulty": 1,
+      "prompt": "A classical Turing instability occurs when a homogeneous steady state is…",
+      "options": [
+        "Stable without diffusion, unstable with diffusion",
+        "Unstable without diffusion, stable with diffusion",
+        "Unstable in every possible system"
+      ],
+      "answer": 0,
+      "why": "Diffusion destabilises an otherwise locally stable homogeneous equilibrium through growth of a spatially varying perturbation.",
+      "source": "Course notes §5.2.1"
+    },
+    {
+      "id": "L4-Q09",
+      "level": 4,
+      "section": "5.2.2",
+      "difficulty": 2,
+      "prompt": "For J = [[fᵤ,fᵥ],[gᵤ,gᵥ]], stability without diffusion requires…",
+      "options": [
+        "fᵤ + gᵥ < 0 and det(J) > 0",
+        "fᵤ + gᵥ > 0 and det(J) > 0",
+        "det(J) < 0"
+      ],
+      "answer": 0,
+      "why": "The homogeneous kinetic system must first be stable: negative trace and positive determinant. Derivatives are evaluated at its steady state.",
+      "source": "Course notes §5.2.2"
+    },
+    {
+      "id": "L4-Q10",
+      "level": 4,
+      "section": "5.2.3",
+      "difficulty": 2,
+      "prompt": "A mode with wavenumber k is governed by which matrix?",
+      "options": [
+        "M(k) = J − k² diag(Dᵤ,Dᵥ)",
+        "M(k) = J + k² diag(Dᵤ,Dᵥ)",
+        "M(k) = kJ"
+      ],
+      "answer": 0,
+      "why": "The second spatial derivative of a sine or cosine mode is −k² times that mode. Diffusion therefore subtracts k²D from the kinetic Jacobian.",
+      "source": "Course notes §5.2.3"
+    },
+    {
+      "id": "L4-Q11",
+      "level": 4,
+      "section": "5.2.3",
+      "difficulty": 3,
+      "prompt": "If the kinetics are stable and Dᵤ,Dᵥ > 0, tr(M(k)) is…",
+      "options": [
+        "Negative for every real k",
+        "Positive for every nonzero k",
+        "Always zero"
+      ],
+      "answer": 0,
+      "why": "tr(M(k)) = tr(J) − (Dᵤ + Dᵥ)k². The first term is negative and the subtracted term is nonnegative.",
+      "source": "Course notes §5.2.3"
+    },
+    {
+      "id": "L4-Q12",
+      "level": 4,
+      "section": "5.2.3",
+      "difficulty": 3,
+      "prompt": "With stable kinetics, a classical two-species stationary mode grows when…",
+      "options": [
+        "det(M(k)) < 0",
+        "det(M(k)) > 0 only",
+        "tr(M(k)) < 0 only"
+      ],
+      "answer": 0,
+      "why": "The trace stays negative. A negative determinant gives real eigenvalues of opposite signs, including one positive growth rate.",
+      "source": "Course notes §5.2.3"
+    },
+    {
+      "id": "L4-Q13",
+      "level": 4,
+      "section": "5.2.3",
+      "difficulty": 3,
+      "prompt": "Let q = k² and Δ = det(J). Then det(M) is…",
+      "options": [
+        "DᵤDᵥq² − (Dᵥfᵤ + Dᵤgᵥ)q + Δ",
+        "DᵤDᵥq² + Δ only",
+        "Δ − (Dᵤ + Dᵥ)q"
+      ],
+      "answer": 0,
+      "why": "Expand (fᵤ − Dᵤq)(gᵥ − Dᵥq) − fᵥgᵤ. The weighted sum of diagonal kinetic derivatives is the coefficient of −q.",
+      "source": "Course notes §5.2.3"
+    },
+    {
+      "id": "L4-Q14",
+      "level": 4,
+      "section": "5.2.3",
+      "difficulty": 3,
+      "prompt": "Write B = Dᵥfᵤ + Dᵤgᵥ and Δ = det(J) > 0. A positive unstable band requires…",
+      "options": [
+        "B > 0 and B² > 4DᵤDᵥΔ",
+        "B < 0 and B² > 4DᵤDᵥΔ",
+        "B = 0"
+      ],
+      "answer": 0,
+      "why": "The quadratic DᵤDᵥq² − Bq + Δ must dip below zero for positive q. Its minimum lies at positive q if B > 0, and the strict discriminant inequality gives two distinct roots.",
+      "source": "Course notes §5.2.3"
+    },
+    {
+      "id": "L4-Q15",
+      "level": 4,
+      "section": "5.2.3",
+      "difficulty": 2,
+      "prompt": "For zero-Neumann conditions on [0,L], allowed wavenumbers are…",
+      "options": [
+        "kₙ = nπ/L, n = 0,1,2,…",
+        "Every positive real number",
+        "kₙ = nL/π"
+      ],
+      "answer": 0,
+      "why": "The eigenfunctions are cos(nπx/L). Their derivatives vanish at both boundaries, so the domain admits only these discrete wavenumbers.",
+      "source": "Course notes §5.2.3"
+    },
+    {
+      "id": "L4-Q16",
+      "level": 4,
+      "section": "5.2.5",
+      "difficulty": 3,
+      "prompt": "The continuum Turing inequalities hold, but no nonzero allowed kₙ lies in the unstable band. What follows?",
+      "options": [
+        "No linearly growing Turing mode on this domain",
+        "A pattern is guaranteed",
+        "The zero mode must grow"
+      ],
+      "answer": 0,
+      "why": "Boundary conditions quantise the wavenumbers. The domain must admit a mode inside the unstable band; the homogeneous zero mode remains stable.",
+      "source": "Course notes §5.2.5"
+    },
+    {
+      "id": "L4-Q17",
+      "level": 4,
+      "section": "5.2.4",
+      "difficulty": 2,
+      "prompt": "Can equal positive diffusion coefficients trigger the classical two-species Turing mechanism with stable kinetics?",
+      "options": [
+        "No",
+        "Yes, for every stable Jacobian",
+        "Only if the domain is large"
+      ],
+      "answer": 0,
+      "why": "If Dᵤ = Dᵥ = D, then M = J − Dk²I. Every kinetic eigenvalue shifts left by Dk², so none becomes unstable.",
+      "source": "Course notes §5.2.4"
+    },
+    {
+      "id": "L4-Q18",
+      "level": 4,
+      "section": "5.2.4",
+      "difficulty": 3,
+      "prompt": "In a classical two-species activator–inhibitor system, the inhibitor must diffuse…",
+      "options": [
+        "Faster than the activator",
+        "At exactly the same rate",
+        "More slowly than the activator"
+      ],
+      "answer": 0,
+      "why": "With fᵤ > 0 and gᵥ < 0, kinetic stability gives |gᵥ| > fᵤ. The condition Dᵥfᵤ + Dᵤgᵥ > 0 then requires Dᵥ > Dᵤ.",
+      "source": "Course notes §5.2.4"
+    },
+    {
+      "id": "L4-Q19",
+      "level": 4,
+      "section": "5.2.5",
+      "difficulty": 2,
+      "prompt": "For a fixed mode index n > 0, doubling L changes kₙ = nπ/L to…",
+      "options": [
+        "kₙ/2",
+        "2kₙ",
+        "kₙ"
+      ],
+      "answer": 0,
+      "why": "Allowed wavenumbers are inversely proportional to domain length. A larger domain also places more allowed modes in a fixed wavenumber interval.",
+      "source": "Course notes §5.2.5"
+    },
+    {
+      "id": "L4-Q20",
+      "level": 4,
+      "section": "5.2.4",
+      "difficulty": 2,
+      "prompt": "For the notes’ f = α − u + u²v and g = β − α − u²v, the steady state is…",
+      "options": [
+        "(β, (β − α)/β²)",
+        "(α + β, β/(α + β)²)",
+        "(β, α/β)"
+      ],
+      "answer": 0,
+      "why": "Adding f and g yields β − u. Thus uₛ = β, and g = 0 gives vₛ = (β − α)/β². Positive concentrations require β > α.",
+      "source": "Course notes §5.2.4"
+    },
+    {
+      "id": "L4-Q21",
+      "level": 4,
+      "section": "5.2.4",
+      "difficulty": 3,
+      "prompt": "For that Schnakenberg steady state, fᵤ = 1 − 2α/β. Local self-activation requires…",
+      "options": [
+        "β > 2α",
+        "β < α",
+        "β = α"
+      ],
+      "answer": 0,
+      "why": "The activator diagonal derivative must be positive: 1 − 2α/β > 0. This is stricter than positivity of vₛ alone.",
+      "source": "Course notes §5.2.4"
+    },
+    {
+      "id": "L4-Q22",
+      "level": 4,
+      "section": "5.2.4",
+      "difficulty": 3,
+      "prompt": "For α = 0.1 and β = 1 in those Schnakenberg kinetics, tr(J) and det(J) are…",
+      "options": [
+        "−0.2 and 1",
+        "0.2 and −1",
+        "0.8 and 1"
+      ],
+      "answer": 0,
+      "why": "At equilibrium, fᵤ = 0.8 and gᵥ = −1, giving trace −0.2. The determinant simplifies to β² = 1, so the kinetics are stable.",
+      "source": "Course notes §5.2.4"
+    },
+    {
+      "id": "L4-Q23",
+      "level": 4,
+      "section": "5.2.3",
+      "difficulty": 2,
+      "prompt": "A dispersion relation tells us…",
+      "options": [
+        "How perturbation growth rate depends on wavenumber",
+        "The final nonlinear peak height exactly",
+        "Only the carrying capacity"
+      ],
+      "answer": 0,
+      "why": "Its eigenvalue branches λ(k) describe linear growth or decay of each spatial mode. Nonlinear saturation and final peak heights require additional analysis.",
+      "source": "Course notes §5.2.3"
+    },
+    {
+      "id": "L4-Q24",
+      "level": 4,
+      "section": "5.3",
+      "difficulty": 1,
+      "prompt": "A pattern resembling a simulated Turing pattern is…",
+      "options": [
+        "Suggestive evidence requiring further tests",
+        "Proof of the underlying mechanism",
+        "Proof that no other mechanism exists"
+      ],
+      "answer": 0,
+      "why": "Similar patterns can arise through different mechanisms. Mechanistic evidence requires measurements and perturbation tests, rather than visual resemblance alone.",
+      "source": "Course notes §5.3"
+    }
+  ],
+  "sequences": [
+    {
+      "id": "L1-S01",
+      "level": 1,
+      "section": "2.2",
+      "title": "From reactions to ODEs",
+      "steps": [
+        "List the reactions",
+        "Write each reaction rate",
+        "Multiply by net change",
+        "Sum contributions"
+      ],
+      "why": "For each species, multiply each mass-action reaction rate by its net stoichiometric change, then sum over reactions.",
+      "source": "Course notes §2.2"
+    },
+    {
+      "id": "L1-S02",
+      "level": 1,
+      "section": "2.3",
+      "title": "Non-dimensionalise a model",
+      "steps": [
+        "Identify variables",
+        "Introduce scaled variables",
+        "Choose characteristic scales",
+        "Rewrite dimensionless system"
+      ],
+      "why": "Define the scales explicitly and transform both the equations and the initial conditions.",
+      "source": "Course notes §2.3"
+    },
+    {
+      "id": "L1-S03",
+      "level": 1,
+      "section": "2.5",
+      "title": "Analyse a steady state",
+      "steps": [
+        "Solve F(uₛ) = 0",
+        "Evaluate Jacobian at uₛ",
+        "Find eigenvalue real parts",
+        "Classify local stability"
+      ],
+      "why": "Equilibria come first. Evaluate derivatives there, then use eigenvalue real parts to classify hyperbolic equilibria. Zero real parts need more work.",
+      "source": "Course notes §2.5"
+    },
+    {
+      "id": "L2-S01",
+      "level": 2,
+      "section": "3.1.1",
+      "title": "Find the SIR infection peak",
+      "steps": [
+        "Check ρ > 1",
+        "Set İ = 0 with I > 0",
+        "Obtain S = a/r",
+        "Use integrated I(S)"
+      ],
+      "why": "If ρ ≤ 1 the maximum is the initial infective population. Otherwise use the interior peak condition and the integrated phase-plane trajectory.",
+      "source": "Course notes §3.1.1"
+    },
+    {
+      "id": "L2-S02",
+      "level": 2,
+      "section": "3.2.1",
+      "title": "Start a cobweb diagram",
+      "steps": [
+        "Draw y = f(N) and y = N",
+        "Mark initial N₀",
+        "Move vertically to f",
+        "Move horizontally to identity"
+      ],
+      "why": "The vertical move evaluates the map; the horizontal move transfers the result to the input axis. Repeat those two moves to iterate.",
+      "source": "Course notes §3.2.1"
+    },
+    {
+      "id": "L2-S03",
+      "level": 2,
+      "section": "3.2.3",
+      "title": "Analyse a period-two orbit",
+      "steps": [
+        "Solve f(f(N)) = N",
+        "Remove fixed points of f",
+        "Pair the remaining points",
+        "Test |f′(N₁)f′(N₂)| < 1"
+      ],
+      "why": "Two-step fixed points include one-step fixed points. Exclude those before testing the multiplier of the genuine cycle.",
+      "source": "Course notes §3.2.3"
+    },
+    {
+      "id": "L3-S01",
+      "level": 3,
+      "section": "4.1",
+      "title": "Derive the diffusion equation",
+      "steps": [
+        "Write nearest-neighbour balance",
+        "Taylor expand to second order",
+        "Set d = D/(Δx)²",
+        "Take Δx → 0"
+      ],
+      "why": "Symmetry cancels the first derivatives. Keeping d(Δx)² = D fixed leaves the second spatial derivative in the continuum limit.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "id": "L3-S02",
+      "level": 3,
+      "section": "4.1",
+      "title": "Check diffusion mass conservation",
+      "steps": [
+        "Integrate PDE over space",
+        "Move time derivative outside",
+        "Integrate uₓₓ once",
+        "Apply zero-flux boundaries"
+      ],
+      "why": "For pure diffusion, the mass derivative reduces to the boundary term D[uₓ]₀ᴸ, which vanishes under zero-flux conditions.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "id": "L3-S03",
+      "level": 3,
+      "section": "4.3.1",
+      "title": "Find a Fisher speed constraint",
+      "steps": [
+        "Set z = x − ct",
+        "Derive travelling-wave ODE",
+        "Linearise at U = 0",
+        "Require c² ≥ 4Dr"
+      ],
+      "why": "The leading-edge characteristic polynomial is Dλ² + cλ + r. Complex roots would create an oscillatory tail crossing into negative populations.",
+      "source": "Course notes §4.3.1"
+    },
+    {
+      "id": "L4-S01",
+      "level": 4,
+      "section": "5.1",
+      "title": "Construct a source gradient",
+      "steps": [
+        "Set uₜ = 0",
+        "Solve Du″ − γu = 0",
+        "Apply u(0) = S and u′(L) = 0",
+        "Locate concentration thresholds"
+      ],
+      "why": "Solve the diffusion–decay boundary-value problem before finding the positions at which cells cross their fate thresholds.",
+      "source": "Course notes §5.1"
+    },
+    {
+      "id": "L4-S02",
+      "level": 4,
+      "section": "5.2",
+      "title": "Test a Turing mechanism",
+      "steps": [
+        "Find homogeneous steady state",
+        "Check tr(J) < 0; det(J) > 0",
+        "Find unstable k band",
+        "Check allowed domain modes"
+      ],
+      "why": "Stable kinetics and a continuum unstable band are necessary. A bounded domain must also admit a nonzero wavenumber inside that band.",
+      "source": "Course notes §5.2"
+    },
+    {
+      "id": "L4-S03",
+      "level": 4,
+      "section": "5.2.3",
+      "title": "Construct a dispersion relation",
+      "steps": [
+        "Linearise reactions at steady state",
+        "Insert exp(λt) cos(kx)",
+        "Form M = J − k²D",
+        "Solve det(M − λI) = 0"
+      ],
+      "why": "A modal perturbation converts the linearised PDE into a matrix eigenvalue problem. Its eigenvalues are the growth-rate branches λ(k).",
+      "source": "Course notes §5.2.3"
+    }
+  ],
+  "bugs": [
+    {
+      "level": 1,
+      "section": "2.2",
+      "name": "Lost stoichiometry",
+      "tip": "Use products minus reactants. In u + v → 2u the net change in u is +1, not +2.",
+      "source": "Course notes §2.2"
+    },
+    {
+      "level": 1,
+      "section": "2.3",
+      "name": "Unscaled initial data",
+      "tip": "Scale initial conditions as well as the equations. If U = u/K, then U(0) = u₀/K.",
+      "source": "Course notes §2.3"
+    },
+    {
+      "level": 1,
+      "section": "2.5",
+      "name": "Zero means stable?",
+      "tip": "A zero eigenvalue real part makes linearisation inconclusive. Inspect nonlinear terms.",
+      "source": "Course notes §2.5"
+    },
+    {
+      "level": 1,
+      "section": "2.7.2",
+      "name": "Nullcline = equilibrium?",
+      "tip": "A single nullcline stops only one velocity component. Both nullcline conditions are needed for a steady state.",
+      "source": "Course notes §2.7.2"
+    },
+    {
+      "level": 2,
+      "section": "3.1",
+      "name": "Growth ≠ per capita",
+      "tip": "For u̇ = ug(u), the total rate is ug(u), whereas g(u) is the intrinsic growth rate.",
+      "source": "Course notes §3.1"
+    },
+    {
+      "level": 2,
+      "section": "3.1.1",
+      "name": "Wrong SIR threshold",
+      "tip": "For the notes’ incidence rSI, the initial threshold is ρ = rS₀/a > 1 with I₀ > 0.",
+      "source": "Course notes §3.1.1"
+    },
+    {
+      "level": 2,
+      "section": "3.2.2",
+      "name": "ODE rule on a map",
+      "tip": "Discrete stability requires |f′(N*)| < 1. A negative derivative alone does not guarantee stability.",
+      "source": "Course notes §3.2.2"
+    },
+    {
+      "level": 2,
+      "section": "3.2.3",
+      "name": "Fixed point in a cycle",
+      "tip": "Solutions of f(f(N)) = N include fixed points. Remove them to obtain genuine period-two points.",
+      "source": "Course notes §3.2.3"
+    },
+    {
+      "level": 3,
+      "section": "4.1",
+      "name": "Zero value ≠ no flux",
+      "tip": "For pure diffusion, zero concentration is Dirichlet; zero normal derivative gives zero diffusive flux.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "level": 3,
+      "section": "4.1",
+      "name": "Wrong hopping scale",
+      "tip": "Use d = D/(Δx)² for symmetric diffusion. The taxis scaling is different.",
+      "source": "Course notes §4.1"
+    },
+    {
+      "level": 3,
+      "section": "4.2",
+      "name": "Missing product rule",
+      "tip": "With a spatially varying velocity, conservation gives uₜ = −∂ₓ(Vu), including the derivative of V.",
+      "source": "Course notes §4.2"
+    },
+    {
+      "level": 3,
+      "section": "4.3.1",
+      "name": "Moving-frame sign",
+      "tip": "For z = x − ct, a stationary profile has uₜ = −cU′, giving DU″ + cU′ + f(U) = 0.",
+      "source": "Course notes §4.3.1"
+    },
+    {
+      "level": 4,
+      "section": "5.2.2",
+      "name": "Unstable to start",
+      "tip": "A classical Turing instability starts from stable homogeneous kinetics: negative trace and positive determinant.",
+      "source": "Course notes §5.2.2"
+    },
+    {
+      "level": 4,
+      "section": "5.2.3",
+      "name": "Wrong discriminant",
+      "tip": "The discriminant is (Dᵥfᵤ + Dᵤgᵥ)² − 4DᵤDᵥ det(J). Keep the kinetic derivatives in the weighted sum.",
+      "source": "Course notes §5.2.3"
+    },
+    {
+      "level": 4,
+      "section": "5.2.5",
+      "name": "Forgot the domain",
+      "tip": "A continuum unstable band is insufficient on a finite domain. Check that an allowed nonzero mode lies inside it.",
+      "source": "Course notes §5.2.5"
+    },
+    {
+      "level": 4,
+      "section": "5.2.3",
+      "name": "Linear ≠ final pattern",
+      "tip": "Dispersion relations predict initial mode growth. They do not determine the final nonlinear peak heights.",
+      "source": "Course notes §5.2.3"
+    }
+  ]
+}

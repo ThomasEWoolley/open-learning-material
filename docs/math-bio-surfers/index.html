@@ -1,0 +1,1549 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A chapter-based mathematical biology revision game from Thomas E. Woolley’s course notes. Four levels, worked feedback and an untimed study mode.">
+<style>
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; font-size: 14px; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+</style>
+<title>Math Bio Surfers</title>
+<style>
+/* Layout: one full-screen canvas (a rail track at dusk under a loss-landscape skyline); a thin HUD on top,
+   a question banner under it with one answer per lane, and overlay cards for the menu, feedback and results.
+   The game commits to one dusk look, so it sets dark colours explicitly instead of following the viewer's theme. */
+:root {
+  --night: #131a30;
+  --dusk: #3a2b58;
+  --ember: #f0a35e;
+  --signal: #d47716;
+  --token: #ffd166;
+  --good: #56b4e9;
+  --bad: #ffb366;
+  --paper: #f3f0fb;
+  --muted: #b3b5d2;
+  --panel: rgba(17, 22, 42, 0.88);
+  --panel-solid: #161c33;
+  --line: rgba(243, 240, 251, 0.18);
+  --font-display: "Bungee", "Arial Black", Impact, sans-serif;
+  --font-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--night); color: var(--paper); font-family: var(--font-body); overflow: hidden; }
+#app { position: relative; height: 100%; overflow: hidden; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+#view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--token); outline-offset: 2px; }
+
+/* HUD */
+.hud {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  pointer-events: none;
+}
+.hud-group { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.score-box { display: flex; flex-direction: column; line-height: 1.05; }
+.score { font-family: var(--font-display); font-size: clamp(20px, 3vw, 28px); color: var(--token); font-variant-numeric: tabular-nums; text-shadow: 0 2px 0 rgba(0,0,0,0.35); }
+.tally { font-size: 12px; color: var(--muted); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.lives { display: flex; gap: 5px; }
+.pip { width: 12px; height: 12px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 0 2px rgba(0,0,0,0.25); }
+.pip.lost { background: transparent; box-shadow: inset 0 0 0 2px rgba(243,240,251,0.35); }
+.pill-btn {
+  pointer-events: auto; border: 1px solid var(--line); background: var(--panel);
+  border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.02em;
+}
+
+/* Question and sequence banners */
+.banner {
+  position: absolute; left: 0; right: 0; top: 54px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  pointer-events: none;
+}
+.banner-box {
+  max-width: 760px; margin-inline: auto; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 14px; padding: 12px 14px 10px; display: flex; flex-direction: column; gap: 10px;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.banner-box { background: rgba(17, 22, 42, 0.94); border-color: rgba(240,163,94,0.45); }
+.tag { font-family: var(--font-display); font-size: 12px; letter-spacing: 0.08em; color: var(--ember); }
+.prompt { font-size: clamp(19px, 1.2vw + 14px, 26px); font-weight: 700; line-height: 1.25; text-wrap: balance; min-width: 0; }
+.goal { font-size: 15px; color: #d9d6ee; }
+.goal b { color: var(--token); }
+.timer { height: 4px; border-radius: 2px; background: var(--ember); transform-origin: left center; }
+
+/* Answer cards, one per lane, above the track */
+.lanes {
+  position: absolute; left: 0; right: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  pointer-events: none;
+}
+.lanes-row { max-width: 820px; margin-inline: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.lane-chip {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  min-height: 64px; padding: 10px 8px; border-radius: 12px; text-align: center; min-width: 0;
+  background: rgba(17, 22, 42, 0.94); border: 2px solid rgba(243,240,251,0.28);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+}
+.lane-chip .lane-text { font-family: var(--font-code); font-weight: 700; font-size: clamp(15px, 0.9vw + 11px, 21px); line-height: 1.2; overflow-wrap: anywhere; }
+.lane-chip .lane-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lane-chip.here { background: var(--token); border-color: #fff1c4; color: var(--night); }
+.lane-chip.here .lane-tag { color: #5b4310; }
+.seq-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-step { font-family: var(--font-code); font-size: 13px; font-weight: 700; padding: 4px 8px; border-radius: 7px; background: rgba(86,180,233,0.16); color: #d0edfc; }
+.chip-step.todo { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(243,240,251,0.32); color: var(--paper); }
+.chips-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); align-self: center; }
+.q-steps .chip-step { font-size: 15px; padding: 6px 10px; }
+
+/* Label for the nearest bug in the player's lane (one at a time, so labels never overlap) */
+.bug-tag {
+  position: absolute; left: 0; top: 0; pointer-events: none; will-change: transform;
+  display: flex; align-items: baseline; gap: 6px; white-space: nowrap;
+  background: var(--signal); color: #fff; border-radius: 8px; padding: 5px 9px;
+  font-family: var(--font-code); font-weight: 700; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}
+.bug-tag::after {
+  content: ""; position: absolute; left: 50%; bottom: -6px; margin-left: -6px;
+  border: 6px solid transparent; border-bottom: 0; border-top-color: var(--signal);
+}
+.bug-tag .bug-k { font-family: var(--font-display); font-size: 10px; letter-spacing: 0.08em; color: #fff0d7; }
+
+/* Toast */
+.toast {
+  position: absolute; left: 50%; top: 58px; transform: translate(-50%, -8px);
+  width: max-content; max-width: min(640px, calc(100% - 32px));
+  background: rgba(17, 22, 42, 0.94); border: 1px solid rgba(86,180,233,0.5); border-radius: 14px; padding: 12px 16px;
+  display: flex; flex-direction: column; gap: 4px; text-align: center;
+  opacity: 0; transition: opacity 160ms ease, transform 160ms ease; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast b { font-family: var(--font-display); font-weight: 400; font-size: 20px; letter-spacing: 0.03em; }
+.toast.good b { color: var(--good); }
+.toast span { font-size: 16px; line-height: 1.4; color: #e4e1f3; }
+
+/* Overlays */
+.overlay {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  padding-block: 20px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: rgba(9, 11, 24, 0.5); overflow-y: auto;
+}
+.card {
+  width: min(560px, 100%); max-height: 100%; overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+  padding: 22px; display: flex; flex-direction: column; gap: 14px;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.eyebrow { font-family: var(--font-display); font-size: 12px; letter-spacing: 0.1em; color: var(--ember); margin: 0; }
+.title {
+  font-family: var(--font-display); font-weight: 400; margin: 0; line-height: 0.95;
+  font-size: clamp(34px, 8vw, 60px); color: var(--paper); text-wrap: balance;
+  text-shadow: 0 3px 0 var(--signal), 0 6px 18px rgba(0,0,0,0.4);
+}
+.lede { margin: 0; font-size: 16px; line-height: 1.5; color: #dcd9ee; max-width: 62ch; }
+fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+legend { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 0; margin-bottom: 8px; }
+.level-chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.level {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
+  border: 1.5px solid var(--line); background: rgba(243,240,251,0.04); border-radius: 11px; padding: 8px 10px;
+}
+.level b { font-size: 14px; }
+.level small { font-size: 12px; color: var(--muted); }
+.level[aria-pressed="true"] { border-color: var(--token); background: rgba(255,209,102,0.12); }
+.primary {
+  border: 0; border-radius: 12px; padding: 13px 18px; background: var(--token); color: var(--night);
+  font-family: var(--font-display); font-size: 17px; letter-spacing: 0.04em; box-shadow: 0 3px 0 #c7902f;
+}
+.primary:active { transform: translateY(2px); box-shadow: 0 1px 0 #c7902f; }
+.primary:disabled { opacity: 0.45; cursor: not-allowed; }
+.secondary { border: 1.5px solid var(--line); border-radius: 12px; padding: 12px 16px; background: transparent; font-weight: 700; }
+.controls { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: #dcd9ee; }
+kbd {
+  font-family: var(--font-code); font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px;
+  border-radius: 5px; padding: 1px 6px; background: rgba(243,240,251,0.06); color: var(--paper);
+}
+.fine { margin: 0; font-size: 13px; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 10px; }
+.row > button { flex: 1 1 160px; }
+
+.kind { align-self: flex-start; margin: 0; font-family: var(--font-display); font-size: 12px; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 999px; background: rgba(255,179,102,0.16); color: var(--bad); }
+.fb-title { margin: 0; font-size: 20px; line-height: 1.3; text-wrap: balance; }
+.answers { display: flex; flex-direction: column; gap: 8px; }
+.ans { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.ans dt { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.ans dd { margin: 0; font-family: var(--font-code); font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
+.ans dd.wrong { color: var(--bad); text-decoration: line-through; text-decoration-thickness: 2px; }
+.ans dd.right { color: var(--good); }
+.why { margin: 0; font-size: 16px; line-height: 1.5; color: #e4e1f3; }
+.hint { margin: 0; font-size: 12px; color: var(--muted); text-align: center; }
+
+/* Question pop-up */
+#qOv { background: rgba(9, 11, 24, 0.62); }
+.q-card, .q-card:focus-visible { border-color: rgba(240,163,94,0.5); outline: none; }
+.q-prompt { margin: 0; font-size: clamp(21px, 1.4vw + 15px, 28px); line-height: 1.25; text-wrap: balance; }
+.q-opts { display: flex; flex-direction: column; gap: 10px; }
+.q-opt {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 14px; text-align: left;
+  padding: 14px 16px; border-radius: 12px; border: 2px solid rgba(243,240,251,0.25); background: rgba(243,240,251,0.06);
+  font-family: var(--font-code); font-weight: 700; font-size: clamp(17px, 0.6vw + 14px, 21px); line-height: 1.25;
+}
+.q-opt span { overflow-wrap: anywhere; }
+.q-opt:hover:not(:disabled) { border-color: var(--token); background: rgba(255,209,102,0.12); }
+.q-opt:disabled { cursor: default; opacity: 0.55; }
+.q-opt.right { border-color: var(--good); background: rgba(86,180,233,0.2); opacity: 1; }
+.q-opt.wrong { border-color: var(--bad); background: rgba(255,179,102,0.16); opacity: 1; }
+.q-opt.right span { color: #d0edfc; }
+.q-opt.wrong span { color: #ffe0b8; text-decoration: line-through; }
+.verdict { margin: 0; font-family: var(--font-display); font-size: 20px; letter-spacing: 0.03em; }
+.verdict.good { color: var(--good); }
+.verdict.bad { color: var(--bad); }
+.q-result { display: flex; flex-direction: column; gap: 6px; }
+
+.final { display: flex; align-items: baseline; gap: 10px; }
+.big { font-family: var(--font-display); font-size: clamp(44px, 10vw, 68px); color: var(--token); line-height: 1; font-variant-numeric: tabular-nums; }
+.unit { font-size: 15px; color: var(--muted); }
+.stats { margin: 0; font-size: 15px; color: #dcd9ee; line-height: 1.5; }
+.review { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.review li { border-top: 1px solid var(--line); padding-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.review .rk { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ember); }
+.review .rq { font-weight: 700; font-size: 15px; line-height: 1.35; }
+.review .ra { font-family: var(--font-code); font-weight: 700; font-size: 14px; color: var(--good); overflow-wrap: anywhere; }
+.review .rw { font-size: 14px; color: var(--muted); line-height: 1.45; }
+.share { display: flex; flex-direction: column; gap: 8px; }
+.share .row > button { flex: 0 1 auto; }
+.copy-text { width: 100%; font-family: var(--font-code); font-size: 14px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: rgba(243,240,251,0.06); color: var(--paper); }
+.bests { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; counter-reset: best; }
+.bests li {
+  counter-increment: best; display: grid; grid-template-columns: 2ch 7ch minmax(0, 1fr); gap: 10px; align-items: baseline;
+  font-size: 14px; color: #dcd9ee; font-variant-numeric: tabular-nums; padding: 3px 6px; border-radius: 6px;
+}
+.bests li::before { content: counter(best); color: var(--muted); text-align: right; }
+.bests li b { font-family: var(--font-code); color: var(--paper); text-align: right; }
+.bests li.now { background: rgba(255,209,102,0.14); }
+.bests li.now b { color: var(--token); }
+h3 { margin: 0; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+@media (max-width: 420px) {
+  .card { padding: 18px; gap: 12px; }
+  .banner { top: 50px; }
+  .ans { grid-template-columns: 1fr; gap: 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast { transition: none; }
+}
+</style>
+<style>
+/* Chapter menu and accessible feedback for this adaptation. */
+.card { width: min(700px, 100%); }
+#menu .card { background: rgba(17,22,42,.97); }
+.title { font-size: clamp(32px, 6vw, 51px); line-height: 1.05; text-shadow: 0 3px 0 #755083; }
+.level-chips { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.level { position: relative; min-height: 126px; gap: 6px; padding: 12px 14px; border-left: 4px solid var(--chapter); }
+.level b { font-size: 16px; }
+.level .level-meta { font-size: 12px; color: var(--ember); font-weight: 700; letter-spacing: .03em; }
+.level small { font-family: var(--font-body); font-size: 13px; line-height: 1.35; }
+.level .progress { font-size: 12px; color: #d0edfc; }
+.level[aria-pressed="true"]::after { content: '✓'; position: absolute; right: 10px; top: 9px; color: var(--token); }
+.mode-label { font-size: 14px; font-weight: bold; }
+select { width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: #212941; color: var(--paper); font: inherit; }
+select:focus-visible,summary:focus-visible,a:focus-visible { outline: 3px solid var(--token); outline-offset: 3px; }
+.tutorial { font-size: 14px; line-height: 1.5; color: #dcd9ee; border-top: 1px solid var(--line); padding-top: 12px; }
+summary { cursor: pointer; font-weight: bold; color: var(--paper); }
+.attribution { font-size: 11px; color: var(--muted); line-height: 1.5; margin: 0; }
+a { color: #9fd8f4; text-underline-offset: 3px; }
+.why,.rw { white-space: pre-line; }
+.q-card { max-height: calc(100dvh - 40px); }
+.q-opt.right::after { content: '✓ Correct'; font: 700 13px var(--font-body); grid-column: 2; color: #d0edfc; }
+.q-opt.wrong::after { content: '× Your answer'; font: 700 13px var(--font-body); grid-column: 2; color: #ffe0b8; }
+#qExit { align-self: center; margin-top: 2px; }
+body.study-session #view { opacity: .18; }
+body.study-session #qOv { background: #0f1529ed; }
+@media(max-width:480px){ .level-chips{grid-template-columns:1fr;} .level{min-height:112px;} #menu .overlay{padding-block:12px;} .hud{gap:6px;padding-left:10px;padding-right:10px;} .pill-btn{padding:6px 8px;} .tally{font-size:10px;} .score{font-size:20px;} }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="view" aria-label="Math Bio Surfers track"></canvas>
+
+  <header class="hud" id="hud" hidden>
+    <div class="hud-group">
+      <div class="score-box"><span class="score" id="score">0</span><span class="tally" id="tally">0 of 0 questions right</span></div>
+    </div>
+    <div class="hud-group">
+      <div class="lives" id="lives" aria-label="Lives"></div>
+      <button class="pill-btn" id="soundBtn" type="button" aria-pressed="true">Sound on</button>
+      <button class="pill-btn" id="pauseBtn" type="button">Pause</button>
+    </div>
+  </header>
+
+  <section class="banner" id="sBanner" hidden aria-live="polite">
+    <div class="banner-box">
+      <span class="tag" id="sTag">IN ORDER</span>
+      <span class="prompt" id="sTitle"></span>
+      <span class="goal" id="sGoal"></span>
+      <div class="seq-chips" id="sChips"></div>
+    </div>
+  </section>
+
+  <section class="lanes" id="laneChips" hidden aria-label="Answers by lane">
+    <div class="lanes-row">
+      <div class="lane-chip"><span class="lane-tag">Left</span><span class="lane-text"></span></div>
+      <div class="lane-chip"><span class="lane-tag">Middle</span><span class="lane-text"></span></div>
+      <div class="lane-chip"><span class="lane-tag">Right</span><span class="lane-text"></span></div>
+    </div>
+  </section>
+
+  <div class="bug-tag" id="bugTag" hidden><span class="bug-k">BUG</span><span id="bugName"></span></div>
+
+  <div class="toast" id="toast" role="status"><b id="toastHead"></b><span id="toastBody"></span></div>
+
+  <div class="overlay" id="menu">
+    <div class="card">
+      <p class="eyebrow">Cardiff · Mathematical Biology</p>
+      <h1 class="title">Math Bio Surfers</h1>
+      <p class="lede">Four chapters. Four levels. Build a model, follow an outbreak, chase a wave and find a pattern.</p>
+      <p class="fine">Based on Thomas E. Woolley’s course notes. Choose any chapter to revise.</p>
+      <fieldset>
+        <legend id="levelLegend">Choose a chapter level</legend>
+        <div class="level-chips" id="levelChips" role="group" aria-labelledby="levelLegend"></div>
+      </fieldset>
+      <label class="mode-label" for="modeSelect">How would you like to revise?</label>
+      <select id="modeSelect"><option value="runner">Runner: dodge obstacles and collect ordered steps</option><option value="study">Study: untimed questions, no movement or lost lives</option></select>
+      <p class="fine" id="sessionRule">12 questions per session. Complete a level with at least 9 correct. All levels stay available.</p>
+      <button class="primary" id="startBtn" type="button">Start level</button>
+      <button class="secondary" id="menuSoundBtn" type="button" aria-pressed="true">Sound and music: on</button>
+      <ul class="controls" id="runnerControls">
+        <li><kbd>←</kbd> <kbd>→</kbd> or swipe sideways to change lane</li>
+        <li><kbd>↑</kbd> or <kbd>Space</kbd> or swipe up to jump the low barriers</li>
+        <li><kbd>P</kbd> to pause. On a phone you can also tap the left, middle or right of the track.</li>
+      </ul>
+      <p class="fine" id="bestLine" hidden></p>
+      <details class="tutorial"><summary>Introduction &amp; how to play</summary><p>Chapter 1 introduces the aim: use mathematical models to understand biological systems, test assumptions and predict behaviour. Analytical reasoning helps us interpret simulations.</p><p>Runner: steer with ← and →, then jump low barriers with ↑ or Space. Questions pause the run. You have three lives; a wrong answer, collision or out-of-order step costs one. Read the feedback before continuing.</p><p>Study: work through 12 questions without a timer or life penalty. Both modes show explanations and sections to revisit. Completed levels and your best accuracy are saved on this device.</p><p>A completion badge means 9 or more correct answers in a full 12-question session. It is a revision milestone. Use written problems to practise longer derivations.</p></details>
+      <p class="attribution">Course notes: Thomas E. Woolley, based on notes by Eamonn A. Gaffney. Game engine adapted from <a href="https://github.com/omaclaren/open-learning-material/tree/master/docs/engsci-205/2026/gradient-surfers">Oliver Maclaren’s Gradient Surfers</a> under the MIT licence. <a href="CONTENT_REVIEW.md">Content and source notes</a>.</p>
+    </div>
+  </div>
+
+  <div class="overlay" id="qOv" hidden>
+    <div class="card q-card" id="qCard" role="dialog" aria-modal="true" aria-labelledby="qPrompt" tabindex="-1">
+      <p class="eyebrow" id="qTag">LEVEL 1 · QUESTION</p>
+      <h2 class="q-prompt" id="qPrompt"></h2>
+      <div class="q-opts" id="qOpts">
+        <button class="q-opt" type="button" data-i="0"><kbd>1</kbd><span></span></button>
+        <button class="q-opt" type="button" data-i="1"><kbd>2</kbd><span></span></button>
+        <button class="q-opt" type="button" data-i="2"><kbd>3</kbd><span></span></button>
+      </div>
+      <div class="q-result" id="qResult" hidden><p class="verdict" id="qVerdict"></p><p class="why" id="qWhy"></p></div>
+      <div class="seq-chips q-steps" id="qSteps" hidden></div>
+      <button class="primary" id="qGo" type="button" hidden>Keep going</button>
+      <p class="hint" id="qHint">Tap an answer, or press 1, 2 or 3</p><button class="pill-btn" id="qExit" type="button">End session</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="cardOv" hidden>
+    <div class="card" role="dialog" aria-modal="true" aria-labelledby="fbTitle">
+      <p class="kind" id="fbKind">Wrong answer</p>
+      <h2 class="fb-title" id="fbTitle"></h2>
+      <dl class="answers" id="fbAnswers"></dl>
+      <p class="why" id="fbWhy"></p>
+      <button class="primary" id="fbBtn" type="button">Keep going</button>
+      <p class="hint" id="fbHint">Space or Enter also continues</p>
+    </div>
+  </div>
+
+  <div class="overlay" id="pauseOv" hidden>
+    <div class="card">
+      <p class="eyebrow">Paused</p>
+      <div class="row">
+        <button class="primary" id="resumeBtn" type="button">Resume</button>
+        <button class="secondary" id="quitBtn" type="button">End run</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overOv" hidden>
+    <div class="card">
+      <p class="eyebrow" id="resultHeading">Session finished</p>
+      <div class="final"><span class="big" id="finalScore">0</span><span class="unit">points</span></div>
+      <p class="stats" id="finalStats"></p>
+      <div class="row">
+        <button class="primary" id="againBtn" type="button">Run again</button>
+        <button class="secondary" id="menuBtn" type="button">Choose another level</button>
+      </div>
+      <div class="share">
+        <div class="row"><button class="secondary" id="copyBtn" type="button">Copy my result</button></div>
+        <input class="copy-text" id="copyText" type="text" readonly hidden aria-label="Your result">
+        <p class="fine" id="copyNote">Your result stays on this device. You can copy it to share yourself.</p>
+      </div>
+      <section id="reviewSec" class="answers">
+        <h3>Worth another look</h3>
+        <ol class="review" id="reviewList"></ol>
+      </section>
+      <section class="answers">
+        <h3>Your best runs on this device</h3>
+        <ol class="bests" id="bestsList"></ol>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- Question bank. Each gate has exactly three options and the index of the right one; "why" is shown after a wrong answer.
+     Sequences are collected in the order given. Bugs label the trains and barriers. Keep options to 18 characters or fewer. -->
+<script type="application/json" id="bank">
+{"title":"Math Bio Surfers","version":1,"runQuestions":12,"passAccuracy":0.75,"levels":[{"id":1,"chapter":2,"title":"Things you have forgotten","short":"Foundations","subtitle":"Build models, scale equations and read phase planes","pages":"6–23","colour":"#56b4e9"},{"id":2,"chapter":3,"title":"Population modelling","short":"Populations","subtitle":"Growth, outbreaks, discrete maps and cycles","pages":"24–46","colour":"#e69f00"},{"id":3,"chapter":4,"title":"Spatial systems","short":"Spatial systems","subtitle":"Diffusion, taxis and travelling waves","pages":"47–59","colour":"#cc79a7"},{"id":4,"chapter":5,"title":"Pattern Formation","short":"Pattern formation","subtitle":"Morphogen gradients and the Turing instability","pages":"60–78","colour":"#f0e442"}],"gates":[{"id":"L1-Q01","level":1,"section":"2","difficulty":1,"prompt":"What makes an ODE system autonomous?","options":["No explicit dependence on time","All solutions are constant","It has only one variable"],"answer":0,"why":"An autonomous vector field depends on the state, rather than explicitly on time. Its solutions can still change with time.","source":"Course notes §2"},{"id":"L1-Q02","level":1,"section":"2.2","difficulty":1,"prompt":"For u + v → 2u at rate R, what is the reaction rate?","options":["Ruv","R(u + v)","Ru²"],"answer":0,"why":"The Law of Mass Action multiplies the concentrations of the reactants. Here each reactant appears once, giving Ruv.","source":"Course notes §2.2"},{"id":"L1-Q03","level":1,"section":"2.2","difficulty":2,"prompt":"For u + v → 2u at rate R, what are the ODE contributions?","options":["u̇ = Ruv; v̇ = −Ruv","u̇ = 2Ruv; v̇ = −Ruv","u̇ = −Ruv; v̇ = Ruv"],"answer":0,"why":"Use the net stoichiometric change: one u is gained and one v is lost per reaction. Two u are produced, but one was consumed.","source":"Course notes §2.2"},{"id":"L1-Q04","level":1,"section":"2.2","difficulty":2,"prompt":"For u̇ = Ruv and v̇ = −Ruv, which quantity is conserved?","options":["u + v","u − v","uv"],"answer":0,"why":"Adding the equations gives d(u + v)/dt = 0. The conserved total lets us replace v by K − u.","source":"Course notes §2.2"},{"id":"L1-Q05","level":1,"section":"2.2","difficulty":2,"prompt":"For 2u → v at rate k, the contribution to u̇ is…","options":["−2ku²","−ku²","+2ku²"],"answer":0,"why":"In the deterministic mass-action convention used in the notes, the reaction rate is ku². Each reaction removes two u.","source":"Course notes §2.2"},{"id":"L1-Q06","level":1,"section":"2.3","difficulty":1,"prompt":"Why non-dimensionalise a model?","options":["Expose scales and reduce parameters","Remove all initial conditions","Make all solutions constant"],"answer":0,"why":"Non-dimensionalisation compares quantities with characteristic scales. It often reveals the parameter combinations that control the dynamics.","source":"Course notes §2.3"},{"id":"L1-Q07","level":1,"section":"2.3.1","difficulty":2,"prompt":"For u̇ = ru(1 − u/K), take U = u/K and τ = rt. Then…","options":["dU/dτ = U(1 − U)","dU/dτ = rU(1 − U)","dU/dτ = U(1 − U/K)"],"answer":0,"why":"The chain rule gives u̇ = Kr dU/dτ. Dividing by Kr removes the dimensional parameters r and K.","source":"Course notes §2.3.1"},{"id":"L1-Q08","level":1,"section":"2.3.1","difficulty":2,"prompt":"If U = u/K and u(0) = u₀, what is U(0)?","options":["u₀/K","Ku₀","u₀"],"answer":0,"why":"Initial conditions must be scaled as well as the differential equation: U(0) = u(0)/K.","source":"Course notes §2.3.1"},{"id":"L1-Q09","level":1,"section":"2.3.2","difficulty":3,"prompt":"For u̇ = k₀ + k₁u + k₂u² with k₁,k₂ > 0, balance derivative, linear and quadratic terms. The scales are…","options":["[t] = 1/k₁; [u] = k₁/k₂","[t] = k₁; [u] = k₂/k₁","[t] = 1/k₂; [u] = k₀"],"answer":0,"why":"The balances [u]/[t] = k₁[u] = k₂[u]² give [t] = 1/k₁ and [u] = k₁/k₂.","source":"Course notes §2.3.2"},{"id":"L1-Q10","level":1,"section":"2.4","difficulty":1,"prompt":"A steady state uₛ of u̇ = f(u) satisfies…","options":["f(uₛ) = 0","f′(uₛ) = 0","uₛ = 0"],"answer":0,"why":"A steady state has zero rate of change. It need not be zero, and its derivative need not vanish.","source":"Course notes §2.4"},{"id":"L1-Q11","level":1,"section":"2.5","difficulty":1,"prompt":"For a scalar ODE, f′(uₛ) \u003c 0 implies…","options":["Local asymptotic stability","Instability","A periodic orbit"],"answer":0,"why":"A small perturbation obeys ε̇ ≈ f′(uₛ)ε. A negative coefficient makes it decay exponentially.","source":"Course notes §2.5"},{"id":"L1-Q12","level":1,"section":"2.5","difficulty":3,"prompt":"If f′(uₛ) = 0, what does linearisation tell us?","options":["Higher-order terms are needed","The steady state is stable","The steady state is unstable"],"answer":0,"why":"A zero linear coefficient is inconclusive. For example, u̇ = −u³ is attracting at zero, whereas u̇ = u³ is repelling.","source":"Course notes §2.5"},{"id":"L1-Q13","level":1,"section":"2.5","difficulty":2,"prompt":"For a real 2 × 2 Jacobian J, local asymptotic stability is guaranteed by…","options":["tr(J) \u003c 0 and det(J) > 0","tr(J) > 0 and det(J) > 0","det(J) \u003c 0"],"answer":0,"why":"The characteristic polynomial is λ² − tr(J)λ + det(J). Both eigenvalues have negative real parts under these strict inequalities.","source":"Course notes §2.5"},{"id":"L1-Q14","level":1,"section":"2.5","difficulty":2,"prompt":"If det(J) \u003c 0 for a real 2 × 2 system, the steady state is a…","options":["Saddle","Stable node","Centre"],"answer":0,"why":"A negative determinant means the eigenvalues are real with opposite signs. Perturbations grow in one eigendirection and decay in the other.","source":"Course notes §2.5"},{"id":"L1-Q15","level":1,"section":"2.5","difficulty":2,"prompt":"A Jacobian has eigenvalues −1 ± 2i. What is the local behaviour?","options":["Stable spiral","Unstable spiral","Saddle"],"answer":0,"why":"The negative real part produces decay; the nonzero imaginary part produces rotation in the linearised phase plane.","source":"Course notes §2.5"},{"id":"L1-Q16","level":1,"section":"2.5","difficulty":3,"prompt":"Purely imaginary eigenvalues of a nonlinear system imply…","options":["Linearisation alone is inconclusive","A nonlinear centre is guaranteed","An unstable node is guaranteed"],"answer":0,"why":"The linearised system has a centre, but nonlinear terms can make the full system attracting or repelling. Zero real parts require further analysis.","source":"Course notes §2.5"},{"id":"L1-Q17","level":1,"section":"2.5","difficulty":2,"prompt":"For f = −u + u²v and g = β − u²v, with β > 0, the steady state is…","options":["(β, 1/β)","(1/β, β)","(β, β)"],"answer":0,"why":"Adding f = 0 and g = 0 gives uₛ = β. Substituting into g = 0 gives vₛ = 1/β.","source":"Course notes §2.5"},{"id":"L1-Q18","level":1,"section":"2.5","difficulty":3,"prompt":"For f = −u + u²v and g = β − u²v, tr(J) = 1 − β² and det(J) = β². Stability requires…","options":["β > 1","0 \u003c β \u003c 1","Every β > 0"],"answer":0,"why":"The determinant is positive for β > 0, so the trace must be negative: 1 − β² \u003c 0. At β = 1, linearisation is inconclusive.","source":"Course notes §2.5"},{"id":"L1-Q19","level":1,"section":"2.6.1","difficulty":2,"prompt":"For H(x) = xᵐ/(1 + xⁿ), x > 0 and m,n > 0, what happens as x → ∞ when m \u003c n?","options":["H(x) → 0","H(x) → 1","H(x) → ∞"],"answer":0,"why":"For large x, H(x) behaves like x^(m − n). A negative exponent gives decay to zero.","source":"Course notes §2.6.1"},{"id":"L1-Q20","level":1,"section":"2.5","difficulty":1,"prompt":"A bifurcation occurs when varying a parameter changes…","options":["The number or stability of steady states","Only the units used to measure time","Only the initial condition"],"answer":0,"why":"A bifurcation is a qualitative change in the dynamics as a parameter varies. The notes focus on changes in the number or stability of steady states.","source":"Course notes §2.5"},{"id":"L1-Q21","level":1,"section":"2.7.2","difficulty":1,"prompt":"A u-nullcline of u̇ = f(u,v), v̇ = g(u,v) is…","options":["The curve f(u,v) = 0","The curve u = 0","Any solution trajectory"],"answer":0,"why":"On a u-nullcline the u-component of velocity is zero. The v-component may still be nonzero.","source":"Course notes §2.7.2"},{"id":"L1-Q22","level":1,"section":"2.7.2","difficulty":2,"prompt":"Away from a steady state, motion on the u-nullcline is…","options":["Vertical in the (u,v) plane","Horizontal in the (u,v) plane","Always zero"],"answer":0,"why":"The horizontal component u̇ is zero on the u-nullcline. Only v changes, so the velocity is vertical.","source":"Course notes §2.7.2"},{"id":"L1-Q23","level":1,"section":"2.7.2","difficulty":1,"prompt":"Where do steady states lie in a two-variable phase plane?","options":["At intersections of both nullclines","At every point on either nullcline","Only at the origin"],"answer":0,"why":"Both derivatives must vanish at a steady state, so both nullcline conditions must hold together.","source":"Course notes §2.7.2"},{"id":"L1-Q24","level":1,"section":"2.7.2","difficulty":3,"prompt":"For u̇ = v − (u − 2)(u − 3), what is the sign of u̇ above its nullcline?","options":["Positive","Negative","Always zero"],"answer":0,"why":"Above v = (u − 2)(u − 3), the value of v exceeds the subtracted term. Thus u̇ > 0 and motion is to the right.","source":"Course notes §2.7.2"},{"id":"L2-Q01","level":2,"section":"3","difficulty":1,"prompt":"For a closed population, the population balance is…","options":["Birth rate minus death rate","Birth rate plus death rate","Immigration rate only"],"answer":0,"why":"A closed population has no immigration or emigration. Births add members and deaths remove them.","source":"Course notes §3"},{"id":"L2-Q02","level":2,"section":"3.1","difficulty":1,"prompt":"For u̇ = ug(u), g(u) is the…","options":["Intrinsic growth rate","Total population change","Carrying capacity"],"answer":0,"why":"The notes call g(u) the intrinsic growth rate. For u > 0 it is the rate of change per individual, u̇/u.","source":"Course notes §3.1"},{"id":"L2-Q03","level":2,"section":"3.1","difficulty":2,"prompt":"In the Malthus model u̇ = (b − d)u, b \u003c d gives…","options":["Exponential decay for u₀ > 0","Exponential growth for u₀ > 0","Logistic saturation"],"answer":0,"why":"The solution is u(t) = u₀ exp((b − d)t). Its exponent is negative when deaths exceed births.","source":"Course notes §3.1"},{"id":"L2-Q04","level":2,"section":"3.1","difficulty":1,"prompt":"In u̇ = ru(1 − u/K), with r,K > 0, K represents…","options":["The carrying capacity","The initial population","The doubling time"],"answer":0,"why":"The positive steady state is u = K. Growth is positive below K and negative above K.","source":"Course notes §3.1"},{"id":"L2-Q05","level":2,"section":"3.1","difficulty":2,"prompt":"For logistic growth with r,K > 0 and 0 \u003c u \u003c K, u̇ is…","options":["Positive","Negative","Zero"],"answer":0,"why":"Both u and 1 − u/K are positive, so the population increases towards K.","source":"Course notes §3.1"},{"id":"L2-Q06","level":2,"section":"3.1","difficulty":2,"prompt":"At which population is the logistic total growth ru(1 − u/K) largest?","options":["u = K/2","u = K","u = 0"],"answer":0,"why":"Differentiating the growth function gives r(1 − 2u/K). Its maximum is at u = K/2, where the second derivative is negative.","source":"Course notes §3.1"},{"id":"L2-Q07","level":2,"section":"3.1","difficulty":1,"prompt":"The budworm predation term BN²/(A² + N²) tends to what as N → ∞?","options":["B","0","∞"],"answer":0,"why":"Predation saturates: divide numerator and denominator by N² to obtain B/(A²/N² + 1).","source":"Course notes §3.1"},{"id":"L2-Q08","level":2,"section":"3.1","difficulty":2,"prompt":"At low N, BN²/(A² + N²) behaves like…","options":["(B/A²)N²","BN","B/N²"],"answer":0,"why":"When N is much smaller than A, the denominator is approximately A². Predation is therefore quadratic at low population density.","source":"Course notes §3.1"},{"id":"L2-Q09","level":2,"section":"3.1","difficulty":3,"prompt":"For the budworm model, using N = Au and t = (A/B)τ gives r =…","options":["RA/B","RB/A","RAB"],"answer":0,"why":"After substitution, dN/dt = B du/dτ. Dividing by B makes the logistic coefficient RA/B and the dimensionless capacity K/A.","source":"Course notes §3.1"},{"id":"L2-Q10","level":2,"section":"3.1","difficulty":3,"prompt":"Why can a large budworm outbreak persist after a small disturbance?","options":["Multiple attracting states may exist","Every disturbance changes K permanently","The model has no equilibria"],"answer":0,"why":"For some parameters the growth and predation curves yield two attracting positive states separated by an unstable threshold. A sufficiently large perturbation can switch the attracting state.","source":"Course notes §3.1"},{"id":"L2-Q11","level":2,"section":"3.1.1","difficulty":1,"prompt":"In the closed SIR model, S + I + R is…","options":["Constant","Increasing at rate rSI","Decreasing at rate aI"],"answer":0,"why":"Adding Ṡ = −rSI, İ = rSI − aI and Ṙ = aI cancels all transfers between compartments.","source":"Course notes §3.1.1"},{"id":"L2-Q12","level":2,"section":"3.1.1","difficulty":2,"prompt":"For İ = rSI − aI with I > 0, infectives increase when…","options":["S > a/r","S \u003c a/r","S > r/a"],"answer":0,"why":"Factor İ = I(rS − a). Since I > 0, its sign is the sign of rS − a.","source":"Course notes §3.1.1"},{"id":"L2-Q13","level":2,"section":"3.1.1","difficulty":2,"prompt":"Using the notes’ notation, the reproduction number is…","options":["ρ = rS₀/a","ρ = aS₀/r","ρ = r/(aS₀)"],"answer":0,"why":"The initial growth condition rS₀ > a can be written ρ > 1, with ρ = rS₀/a. This uses the density-dependent incidence rSI in the notes.","source":"Course notes §3.1.1"},{"id":"L2-Q14","level":2,"section":"3.1.1","difficulty":3,"prompt":"If r = 0.002 per person per day, S₀ = 800 and a = 1 per day, ρ equals…","options":["1.6","0.625","1600"],"answer":0,"why":"ρ = rS₀/a = 0.002 × 800 / 1 = 1.6. With I₀ > 0 the number of infectives initially increases.","source":"Course notes §3.1.1"},{"id":"L2-Q15","level":2,"section":"3.1.1","difficulty":2,"prompt":"During an SIR outbreak with ρ > 1, infectives peak when…","options":["S = a/r","S = 0","R = 0"],"answer":0,"why":"At an interior maximum İ = 0. Since I > 0, this requires rS − a = 0.","source":"Course notes §3.1.1"},{"id":"L2-Q16","level":2,"section":"3.1.1","difficulty":3,"prompt":"For Ṡ = −rSI and İ = rSI − aI, dI/dS is…","options":["−1 + a/(rS)","1 − a/(rS)","−1 + rS/a"],"answer":0,"why":"Divide İ by Ṡ where S,I > 0: (rSI − aI)/(−rSI) = −1 + a/(rS).","source":"Course notes §3.1.1"},{"id":"L2-Q17","level":2,"section":"3.2","difficulty":1,"prompt":"A steady state N* of Nₜ₊₁ = f(Nₜ) satisfies…","options":["f(N*) = N*","f(N*) = 0","f′(N*) = 0"],"answer":0,"why":"A discrete steady state is unchanged by one iteration. It is an intersection of the graph of f with the identity line.","source":"Course notes §3.2"},{"id":"L2-Q18","level":2,"section":"3.2.2","difficulty":2,"prompt":"A fixed point of a scalar map is locally asymptotically stable if…","options":["|f′(N*)| \u003c 1","f′(N*) \u003c 0 only","f′(N*) > 1"],"answer":0,"why":"The perturbation satisfies εₜ₊₁ ≈ f′(N*)εₜ. Its magnitude shrinks when the multiplier has modulus less than one.","source":"Course notes §3.2.2"},{"id":"L2-Q19","level":2,"section":"3.2.2","difficulty":2,"prompt":"If f′(N*) = −0.6, a small perturbation…","options":["Alternates sides and decays","Alternates sides and grows","Decays without alternating sides"],"answer":0,"why":"The negative multiplier reverses the sign on each iteration, and its modulus 0.6 makes the perturbation decay.","source":"Course notes §3.2.2"},{"id":"L2-Q20","level":2,"section":"3.2.2","difficulty":3,"prompt":"For f(N) = rN(1 − N), f′ at N* = 1 − 1/r equals…","options":["2 − r","r − 2","1 − r"],"answer":0,"why":"Since f′(N) = r − 2rN, substitution gives r − 2r(1 − 1/r) = 2 − r.","source":"Course notes §3.2.2"},{"id":"L2-Q21","level":2,"section":"3.2.2","difficulty":2,"prompt":"The positive fixed point of the logistic map is locally asymptotically stable for…","options":["1 \u003c r \u003c 3","0 \u003c r \u003c 1","r > 3"],"answer":0,"why":"The state 1 − 1/r is positive for r > 1. Stability requires |2 − r| \u003c 1, giving 1 \u003c r \u003c 3.","source":"Course notes §3.2.2"},{"id":"L2-Q22","level":2,"section":"3.2.3","difficulty":3,"prompt":"To find a genuine period-two orbit, solve f(f(N)) = N and then…","options":["Exclude fixed points of f","Keep only fixed points of f","Set f′(N) = 0"],"answer":0,"why":"A fixed point is also fixed under two iterations. Genuine period-two points return after two steps but not after one.","source":"Course notes §3.2.3"},{"id":"L2-Q23","level":2,"section":"3.2.3","difficulty":3,"prompt":"A period-two orbit {N₁,N₂} is attracting if…","options":["|f′(N₁)f′(N₂)| \u003c 1","|f′(N₁) + f′(N₂)| \u003c 1","Both N₁ and N₂ are less than 1"],"answer":0,"why":"Apply the fixed-point criterion to f composed with itself. The chain rule gives the product of the derivatives around the cycle.","source":"Course notes §3.2.3"},{"id":"L2-Q24","level":2,"section":"3.2.3","difficulty":3,"prompt":"For the logistic map, the period-two orbit is attracting in which interval?","options":["3 \u003c r \u003c 1 + √6","1 \u003c r \u003c 3","r > 4"],"answer":0,"why":"The cycle multiplier is −r² + 2r + 4. Its modulus is less than one for 3 \u003c r \u003c 1 + √6, approximately 3.449.","source":"Course notes §3.2.3"},{"id":"L3-Q01","level":3,"section":"4","difficulty":1,"prompt":"Diffusion models…","options":["Random movement","Movement up every chemical gradient","Births without movement"],"answer":0,"why":"Diffusion describes random motion. Directed movement in response to a stimulus is taxis.","source":"Course notes §4"},{"id":"L3-Q02","level":3,"section":"4","difficulty":1,"prompt":"Chemotaxis is directed movement in response to a…","options":["Chemical gradient","Population birth rate","Carrying capacity"],"answer":0,"why":"Cells can move towards a chemoattractant or away from a chemorepellent. The direction depends on the chemical signal.","source":"Course notes §4"},{"id":"L3-Q03","level":3,"section":"4.1","difficulty":1,"prompt":"The one-dimensional diffusion equation with constant D is…","options":["uₜ = Duₓₓ","uₜ = Duₓ","uₜ = Du²"],"answer":0,"why":"Symmetric random movement yields a second spatial derivative. D > 0 sets the spreading rate.","source":"Course notes §4.1"},{"id":"L3-Q04","level":3,"section":"4.1","difficulty":2,"prompt":"What are the units of a diffusion coefficient?","options":["Length²/time","Length/time","Time/length²"],"answer":0,"why":"uₜ has units of u/time, whereas uₓₓ has units of u/length². D therefore has units length²/time.","source":"Course notes §4.1"},{"id":"L3-Q05","level":3,"section":"4.1","difficulty":2,"prompt":"In the lattice diffusion derivation, the hopping rate is d =…","options":["D/(Δx)²","D/Δx","D(Δx)²"],"answer":0,"why":"The discrete Laplacian contributes a factor (Δx)² after Taylor expansion. Taking d = D/(Δx)² keeps the continuum diffusion coefficient finite.","source":"Course notes §4.1"},{"id":"L3-Q06","level":3,"section":"4.1","difficulty":2,"prompt":"Why do first spatial derivatives cancel for symmetric nearest-neighbour hopping?","options":["Left and right contributions have opposite signs","All spatial derivatives are zero","The population is always uniform"],"answer":0,"why":"The expansions of u(x − Δx) and u(x + Δx) have equal and opposite first-order terms. The second-order terms add.","source":"Course notes §4.1"},{"id":"L3-Q07","level":3,"section":"4.1","difficulty":1,"prompt":"Dirichlet boundary conditions specify…","options":["The value of u on a boundary","Only the value of uₓₓ","The total population everywhere"],"answer":0,"why":"A Dirichlet condition prescribes the dependent variable, for example u(0,t) = S.","source":"Course notes §4.1"},{"id":"L3-Q08","level":3,"section":"4.1","difficulty":1,"prompt":"For pure diffusion, zero-flux conditions on [0,L] are…","options":["uₓ(0,t) = uₓ(L,t) = 0","u(0,t) = u(L,t) = 0","uₜ(0,t) = uₜ(L,t) = 0"],"answer":0,"why":"The diffusive flux is −Duₓ. With D > 0, zero normal flux means zero normal derivative.","source":"Course notes §4.1"},{"id":"L3-Q09","level":3,"section":"4.1","difficulty":2,"prompt":"A Robin boundary condition specifies…","options":["A linear combination of u and its normal derivative","A second initial condition","Only the second spatial derivative"],"answer":0,"why":"Robin conditions combine the value and first normal derivative, for example αu + βuₓ = γ at a boundary.","source":"Course notes §4.1"},{"id":"L3-Q10","level":3,"section":"4.1","difficulty":2,"prompt":"For pure diffusion with zero-flux boundaries, total mass…","options":["Remains constant","Always decreases","Always increases"],"answer":0,"why":"Integrating uₜ = Duₓₓ over [0,L] gives d∫u dx/dt = D[uₓ]₀ᴸ = 0. There are no reaction sources or boundary losses.","source":"Course notes §4.1"},{"id":"L3-Q11","level":3,"section":"4.1","difficulty":3,"prompt":"For pure diffusion on [0,L], d∫₀ᴸu dx/dt equals…","options":["D[uₓ(L,t) − uₓ(0,t)]","D[u(L,t) − u(0,t)]","D∫₀ᴸu dx"],"answer":0,"why":"Move the time derivative outside the spatial integral and integrate the second spatial derivative once.","source":"Course notes §4.1"},{"id":"L3-Q12","level":3,"section":"4.1","difficulty":3,"prompt":"A smooth steady state of pure diffusion on a connected finite interval with zero-flux boundaries is…","options":["Spatially constant","Always zero","Always sinusoidal"],"answer":0,"why":"At steady state uₓₓ = 0, so u is linear in x. Zero derivatives at the boundaries force its slope to vanish; mass determines the constant.","source":"Course notes §4.1"},{"id":"L3-Q13","level":3,"section":"4.1","difficulty":2,"prompt":"Can zero-Dirichlet boundaries remove mass from a positive diffusing population?","options":["Yes, they can act as absorbing boundaries","No, all diffusion conserves mass in a finite domain","Only if D is negative"],"answer":0,"why":"Fixing u = 0 allows outward diffusive flux at an edge. Mass conservation inside the domain requires zero flux, rather than zero concentration.","source":"Course notes §4.1"},{"id":"L3-Q14","level":3,"section":"4.2","difficulty":2,"prompt":"If a population moves with velocity V(x), its conservation equation is…","options":["uₜ = −∂ₓ(Vu)","uₜ = V(x)u","uₜ = −Vₓ only"],"answer":0,"why":"The flux is Vu. Conservation requires rate of change = minus flux divergence; the product derivative includes spatial variation in both V and u.","source":"Course notes §4.2"},{"id":"L3-Q15","level":3,"section":"4.2","difficulty":3,"prompt":"The notes write taxis as uₜ = ∂ₓ((Dₗ − Dᵣ)u). The velocity is…","options":["V = Dᵣ − Dₗ","V = Dₗ − Dᵣ","V = Dₗ + Dᵣ"],"answer":0,"why":"Write the equation as uₜ = −∂ₓ(Vu). Rightward movement contributes positively to V and leftward movement negatively.","source":"Course notes §4.2"},{"id":"L3-Q16","level":3,"section":"4.3","difficulty":1,"prompt":"A travelling wave keeps its shape while…","options":["Translating at constant speed","Its amplitude grows exponentially","Its spatial profile disappears"],"answer":0,"why":"A travelling wave has the form u(x,t) = U(x − ct). Its profile is stationary in coordinates moving at speed c.","source":"Course notes §4.3"},{"id":"L3-Q17","level":3,"section":"4.3.1","difficulty":2,"prompt":"For u(x,t) = U(z), z = x − ct, the time derivative is…","options":["uₜ = −cU′","uₜ = cU′","uₜ = U″"],"answer":0,"why":"The chain rule gives uₜ = U′(z)zₜ = −cU′(z).","source":"Course notes §4.3.1"},{"id":"L3-Q18","level":3,"section":"4.3.1","difficulty":2,"prompt":"Fisher’s equation combines diffusion with…","options":["Logistic growth","Only exponential death","A discrete-time update"],"answer":0,"why":"The equation is uₜ = Duₓₓ + ru(1 − u/K). Movement spreads the population while local logistic growth fills the invaded region.","source":"Course notes §4.3.1"},{"id":"L3-Q19","level":3,"section":"4.3.1","difficulty":3,"prompt":"The travelling-wave ODE for Fisher’s equation is…","options":["DU″ + cU′ + rU(1 − U/K) = 0","DU″ − cU′ + rU(1 − U/K) = 0","DU′ + cU″ = 0"],"answer":0,"why":"Substitute uₜ = −cU′ and uₓₓ = U″, then move all terms to one side.","source":"Course notes §4.3.1"},{"id":"L3-Q20","level":3,"section":"4.3.1","difficulty":2,"prompt":"For a right-moving Fisher invasion with c > 0, the profile connects…","options":["U(−∞) = K to U(+∞) = 0","U(−∞) = 0 to U(+∞) = K","U(−∞) = K to U(+∞) = K"],"answer":0,"why":"Behind the front, at z → −∞, the population has reached K. Ahead, at z → +∞, the environment is unoccupied.","source":"Course notes §4.3.1"},{"id":"L3-Q21","level":3,"section":"4.3.1","difficulty":3,"prompt":"For a nonnegative Fisher travelling front with D,r > 0, the minimum speed is…","options":["2√(Dr)","2Dr","√(D/r)"],"answer":0,"why":"Linearising DU″ + cU′ + rU = 0 at the leading edge gives Dλ² + cλ + r = 0. Avoiding oscillatory sign changes requires c² ≥ 4Dr.","source":"Course notes §4.3.1"},{"id":"L3-Q22","level":3,"section":"4.3.1","difficulty":3,"prompt":"If D = 4 and r = 1/4 in consistent units, the minimum Fisher speed is…","options":["2","1","4"],"answer":0,"why":"Use c_min = 2√(Dr) = 2√(4 × 1/4) = 2. The carrying capacity K does not enter this speed.","source":"Course notes §4.3.1"},{"id":"L3-Q23","level":3,"section":"4.3.1","difficulty":3,"prompt":"In Fisher’s travelling-wave phase plane, a front corresponds to…","options":["A heteroclinic connection between equilibria","Any closed orbit","A single constant equilibrium"],"answer":0,"why":"With V = U′, the profile is an orbit connecting (K,0) to (0,0). Its end states are distinct equilibria.","source":"Course notes §4.3.1"},{"id":"L3-Q24","level":3,"section":"4.3","difficulty":2,"prompt":"With local reaction f(u), zero-flux boundaries guarantee conservation of ∫u dx only if…","options":["The integrated reaction contributes no net change","The diffusion coefficient is positive","The interval is finite"],"answer":0,"why":"Zero boundary flux removes the diffusion contribution to the mass balance, but ∫f(u) dx can still create or remove population.","source":"Course notes §4.3"},{"id":"L4-Q01","level":4,"section":"5.1","difficulty":1,"prompt":"The French flag mechanism assigns cell fates using…","options":["Thresholds in morphogen concentration","Only the age of each cell","Identical concentrations everywhere"],"answer":0,"why":"Different ranges of a spatial morphogen gradient specify different responses. The flag colours represent these distinct fates.","source":"Course notes §5.1"},{"id":"L4-Q02","level":4,"section":"5.1","difficulty":1,"prompt":"In uₜ = Duₓₓ − γu, γu describes…","options":["Linear morphogen decay","Morphogen production at every point","Directed movement"],"answer":0,"why":"For γ > 0, −γu removes morphogen at a rate proportional to its concentration. Diffusion spreads the morphogen from its source.","source":"Course notes §5.1"},{"id":"L4-Q03","level":4,"section":"5.1","difficulty":2,"prompt":"What is the diffusion–decay length scale for D,γ > 0?","options":["ℓ = √(D/γ)","ℓ = D/γ","ℓ = √(γ/D)"],"answer":0,"why":"Balancing D u/ℓ² with γu gives ℓ² = D/γ. This has the units of length.","source":"Course notes §5.1"},{"id":"L4-Q04","level":4,"section":"5.1","difficulty":2,"prompt":"At fixed γ, multiplying D by four makes ℓ = √(D/γ)…","options":["Twice as large","Four times as large","Half as large"],"answer":0,"why":"The length scale depends on the square root of D: √(4D/γ) = 2√(D/γ).","source":"Course notes §5.1"},{"id":"L4-Q05","level":4,"section":"5.1","difficulty":3,"prompt":"For D u″ − γu = 0, u(0) = S and u′(L) = 0, the steady profile is…","options":["S cosh((L − x)/ℓ) / cosh(L/ℓ)","S sinh((L − x)/ℓ)","S exp(x/ℓ)"],"answer":0,"why":"With ℓ = √(D/γ), this cosh profile solves the steady equation, equals S at x = 0 and has zero derivative at x = L.","source":"Course notes §5.1"},{"id":"L4-Q06","level":4,"section":"5.1","difficulty":2,"prompt":"Far from the reflecting end, when L ≫ ℓ, the source gradient is approximately…","options":["u(x) ≈ S exp(−x/ℓ)","u(x) ≈ S exp(x/ℓ)","u(x) ≈ Sx²"],"answer":0,"why":"The finite-interval cosh ratio approaches a decaying exponential when the reflecting boundary is sufficiently far away.","source":"Course notes §5.1"},{"id":"L4-Q07","level":4,"section":"5.1.1","difficulty":2,"prompt":"In the notes’ limb-bud example, adding a second polarising region tests…","options":["Predictions of a morphogen-source mechanism","Whether diffusion is always absent","Whether all cells have the same fate"],"answer":0,"why":"The extra source changes the concentration profile. The observed additional digit identities test predictions of concentration-dependent specification.","source":"Course notes §5.1.1"},{"id":"L4-Q08","level":4,"section":"5.2.1","difficulty":1,"prompt":"A classical Turing instability occurs when a homogeneous steady state is…","options":["Stable without diffusion, unstable with diffusion","Unstable without diffusion, stable with diffusion","Unstable in every possible system"],"answer":0,"why":"Diffusion destabilises an otherwise locally stable homogeneous equilibrium through growth of a spatially varying perturbation.","source":"Course notes §5.2.1"},{"id":"L4-Q09","level":4,"section":"5.2.2","difficulty":2,"prompt":"For J = [[fᵤ,fᵥ],[gᵤ,gᵥ]], stability without diffusion requires…","options":["fᵤ + gᵥ \u003c 0 and det(J) > 0","fᵤ + gᵥ > 0 and det(J) > 0","det(J) \u003c 0"],"answer":0,"why":"The homogeneous kinetic system must first be stable: negative trace and positive determinant. Derivatives are evaluated at its steady state.","source":"Course notes §5.2.2"},{"id":"L4-Q10","level":4,"section":"5.2.3","difficulty":2,"prompt":"A mode with wavenumber k is governed by which matrix?","options":["M(k) = J − k² diag(Dᵤ,Dᵥ)","M(k) = J + k² diag(Dᵤ,Dᵥ)","M(k) = kJ"],"answer":0,"why":"The second spatial derivative of a sine or cosine mode is −k² times that mode. Diffusion therefore subtracts k²D from the kinetic Jacobian.","source":"Course notes §5.2.3"},{"id":"L4-Q11","level":4,"section":"5.2.3","difficulty":3,"prompt":"If the kinetics are stable and Dᵤ,Dᵥ > 0, tr(M(k)) is…","options":["Negative for every real k","Positive for every nonzero k","Always zero"],"answer":0,"why":"tr(M(k)) = tr(J) − (Dᵤ + Dᵥ)k². The first term is negative and the subtracted term is nonnegative.","source":"Course notes §5.2.3"},{"id":"L4-Q12","level":4,"section":"5.2.3","difficulty":3,"prompt":"With stable kinetics, a classical two-species stationary mode grows when…","options":["det(M(k)) \u003c 0","det(M(k)) > 0 only","tr(M(k)) \u003c 0 only"],"answer":0,"why":"The trace stays negative. A negative determinant gives real eigenvalues of opposite signs, including one positive growth rate.","source":"Course notes §5.2.3"},{"id":"L4-Q13","level":4,"section":"5.2.3","difficulty":3,"prompt":"Let q = k² and Δ = det(J). Then det(M) is…","options":["DᵤDᵥq² − (Dᵥfᵤ + Dᵤgᵥ)q + Δ","DᵤDᵥq² + Δ only","Δ − (Dᵤ + Dᵥ)q"],"answer":0,"why":"Expand (fᵤ − Dᵤq)(gᵥ − Dᵥq) − fᵥgᵤ. The weighted sum of diagonal kinetic derivatives is the coefficient of −q.","source":"Course notes §5.2.3"},{"id":"L4-Q14","level":4,"section":"5.2.3","difficulty":3,"prompt":"Write B = Dᵥfᵤ + Dᵤgᵥ and Δ = det(J) > 0. A positive unstable band requires…","options":["B > 0 and B² > 4DᵤDᵥΔ","B \u003c 0 and B² > 4DᵤDᵥΔ","B = 0"],"answer":0,"why":"The quadratic DᵤDᵥq² − Bq + Δ must dip below zero for positive q. Its minimum lies at positive q if B > 0, and the strict discriminant inequality gives two distinct roots.","source":"Course notes §5.2.3"},{"id":"L4-Q15","level":4,"section":"5.2.3","difficulty":2,"prompt":"For zero-Neumann conditions on [0,L], allowed wavenumbers are…","options":["kₙ = nπ/L, n = 0,1,2,…","Every positive real number","kₙ = nL/π"],"answer":0,"why":"The eigenfunctions are cos(nπx/L). Their derivatives vanish at both boundaries, so the domain admits only these discrete wavenumbers.","source":"Course notes §5.2.3"},{"id":"L4-Q16","level":4,"section":"5.2.5","difficulty":3,"prompt":"The continuum Turing inequalities hold, but no nonzero allowed kₙ lies in the unstable band. What follows?","options":["No linearly growing Turing mode on this domain","A pattern is guaranteed","The zero mode must grow"],"answer":0,"why":"Boundary conditions quantise the wavenumbers. The domain must admit a mode inside the unstable band; the homogeneous zero mode remains stable.","source":"Course notes §5.2.5"},{"id":"L4-Q17","level":4,"section":"5.2.4","difficulty":2,"prompt":"Can equal positive diffusion coefficients trigger the classical two-species Turing mechanism with stable kinetics?","options":["No","Yes, for every stable Jacobian","Only if the domain is large"],"answer":0,"why":"If Dᵤ = Dᵥ = D, then M = J − Dk²I. Every kinetic eigenvalue shifts left by Dk², so none becomes unstable.","source":"Course notes §5.2.4"},{"id":"L4-Q18","level":4,"section":"5.2.4","difficulty":3,"prompt":"In a classical two-species activator–inhibitor system, the inhibitor must diffuse…","options":["Faster than the activator","At exactly the same rate","More slowly than the activator"],"answer":0,"why":"With fᵤ > 0 and gᵥ \u003c 0, kinetic stability gives |gᵥ| > fᵤ. The condition Dᵥfᵤ + Dᵤgᵥ > 0 then requires Dᵥ > Dᵤ.","source":"Course notes §5.2.4"},{"id":"L4-Q19","level":4,"section":"5.2.5","difficulty":2,"prompt":"For a fixed mode index n > 0, doubling L changes kₙ = nπ/L to…","options":["kₙ/2","2kₙ","kₙ"],"answer":0,"why":"Allowed wavenumbers are inversely proportional to domain length. A larger domain also places more allowed modes in a fixed wavenumber interval.","source":"Course notes §5.2.5"},{"id":"L4-Q20","level":4,"section":"5.2.4","difficulty":2,"prompt":"For the notes’ f = α − u + u²v and g = β − α − u²v, the steady state is…","options":["(β, (β − α)/β²)","(α + β, β/(α + β)²)","(β, α/β)"],"answer":0,"why":"Adding f and g yields β − u. Thus uₛ = β, and g = 0 gives vₛ = (β − α)/β². Positive concentrations require β > α.","source":"Course notes §5.2.4"},{"id":"L4-Q21","level":4,"section":"5.2.4","difficulty":3,"prompt":"For that Schnakenberg steady state, fᵤ = 1 − 2α/β. Local self-activation requires…","options":["β > 2α","β \u003c α","β = α"],"answer":0,"why":"The activator diagonal derivative must be positive: 1 − 2α/β > 0. This is stricter than positivity of vₛ alone.","source":"Course notes §5.2.4"},{"id":"L4-Q22","level":4,"section":"5.2.4","difficulty":3,"prompt":"For α = 0.1 and β = 1 in those Schnakenberg kinetics, tr(J) and det(J) are…","options":["−0.2 and 1","0.2 and −1","0.8 and 1"],"answer":0,"why":"At equilibrium, fᵤ = 0.8 and gᵥ = −1, giving trace −0.2. The determinant simplifies to β² = 1, so the kinetics are stable.","source":"Course notes §5.2.4"},{"id":"L4-Q23","level":4,"section":"5.2.3","difficulty":2,"prompt":"A dispersion relation tells us…","options":["How perturbation growth rate depends on wavenumber","The final nonlinear peak height exactly","Only the carrying capacity"],"answer":0,"why":"Its eigenvalue branches λ(k) describe linear growth or decay of each spatial mode. Nonlinear saturation and final peak heights require additional analysis.","source":"Course notes §5.2.3"},{"id":"L4-Q24","level":4,"section":"5.3","difficulty":1,"prompt":"A pattern resembling a simulated Turing pattern is…","options":["Suggestive evidence requiring further tests","Proof of the underlying mechanism","Proof that no other mechanism exists"],"answer":0,"why":"Similar patterns can arise through different mechanisms. Mechanistic evidence requires measurements and perturbation tests, rather than visual resemblance alone.","source":"Course notes §5.3"}],"sequences":[{"id":"L1-S01","level":1,"section":"2.2","title":"From reactions to ODEs","steps":["List the reactions","Write each reaction rate","Multiply by net change","Sum contributions"],"why":"For each species, multiply each mass-action reaction rate by its net stoichiometric change, then sum over reactions.","source":"Course notes §2.2"},{"id":"L1-S02","level":1,"section":"2.3","title":"Non-dimensionalise a model","steps":["Identify variables","Introduce scaled variables","Choose characteristic scales","Rewrite dimensionless system"],"why":"Define the scales explicitly and transform both the equations and the initial conditions.","source":"Course notes §2.3"},{"id":"L1-S03","level":1,"section":"2.5","title":"Analyse a steady state","steps":["Solve F(uₛ) = 0","Evaluate Jacobian at uₛ","Find eigenvalue real parts","Classify local stability"],"why":"Equilibria come first. Evaluate derivatives there, then use eigenvalue real parts to classify hyperbolic equilibria. Zero real parts need more work.","source":"Course notes §2.5"},{"id":"L2-S01","level":2,"section":"3.1.1","title":"Find the SIR infection peak","steps":["Check ρ > 1","Set İ = 0 with I > 0","Obtain S = a/r","Use integrated I(S)"],"why":"If ρ ≤ 1 the maximum is the initial infective population. Otherwise use the interior peak condition and the integrated phase-plane trajectory.","source":"Course notes §3.1.1"},{"id":"L2-S02","level":2,"section":"3.2.1","title":"Start a cobweb diagram","steps":["Draw y = f(N) and y = N","Mark initial N₀","Move vertically to f","Move horizontally to identity"],"why":"The vertical move evaluates the map; the horizontal move transfers the result to the input axis. Repeat those two moves to iterate.","source":"Course notes §3.2.1"},{"id":"L2-S03","level":2,"section":"3.2.3","title":"Analyse a period-two orbit","steps":["Solve f(f(N)) = N","Remove fixed points of f","Pair the remaining points","Test |f′(N₁)f′(N₂)| \u003c 1"],"why":"Two-step fixed points include one-step fixed points. Exclude those before testing the multiplier of the genuine cycle.","source":"Course notes §3.2.3"},{"id":"L3-S01","level":3,"section":"4.1","title":"Derive the diffusion equation","steps":["Write nearest-neighbour balance","Taylor expand to second order","Set d = D/(Δx)²","Take Δx → 0"],"why":"Symmetry cancels the first derivatives. Keeping d(Δx)² = D fixed leaves the second spatial derivative in the continuum limit.","source":"Course notes §4.1"},{"id":"L3-S02","level":3,"section":"4.1","title":"Check diffusion mass conservation","steps":["Integrate PDE over space","Move time derivative outside","Integrate uₓₓ once","Apply zero-flux boundaries"],"why":"For pure diffusion, the mass derivative reduces to the boundary term D[uₓ]₀ᴸ, which vanishes under zero-flux conditions.","source":"Course notes §4.1"},{"id":"L3-S03","level":3,"section":"4.3.1","title":"Find a Fisher speed constraint","steps":["Set z = x − ct","Derive travelling-wave ODE","Linearise at U = 0","Require c² ≥ 4Dr"],"why":"The leading-edge characteristic polynomial is Dλ² + cλ + r. Complex roots would create an oscillatory tail crossing into negative populations.","source":"Course notes §4.3.1"},{"id":"L4-S01","level":4,"section":"5.1","title":"Construct a source gradient","steps":["Set uₜ = 0","Solve Du″ − γu = 0","Apply u(0) = S and u′(L) = 0","Locate concentration thresholds"],"why":"Solve the diffusion–decay boundary-value problem before finding the positions at which cells cross their fate thresholds.","source":"Course notes §5.1"},{"id":"L4-S02","level":4,"section":"5.2","title":"Test a Turing mechanism","steps":["Find homogeneous steady state","Check tr(J) \u003c 0; det(J) > 0","Find unstable k band","Check allowed domain modes"],"why":"Stable kinetics and a continuum unstable band are necessary. A bounded domain must also admit a nonzero wavenumber inside that band.","source":"Course notes §5.2"},{"id":"L4-S03","level":4,"section":"5.2.3","title":"Construct a dispersion relation","steps":["Linearise reactions at steady state","Insert exp(λt) cos(kx)","Form M = J − k²D","Solve det(M − λI) = 0"],"why":"A modal perturbation converts the linearised PDE into a matrix eigenvalue problem. Its eigenvalues are the growth-rate branches λ(k).","source":"Course notes §5.2.3"}],"bugs":[{"level":1,"section":"2.2","name":"Lost stoichiometry","tip":"Use products minus reactants. In u + v → 2u the net change in u is +1, not +2.","source":"Course notes §2.2"},{"level":1,"section":"2.3","name":"Unscaled initial data","tip":"Scale initial conditions as well as the equations. If U = u/K, then U(0) = u₀/K.","source":"Course notes §2.3"},{"level":1,"section":"2.5","name":"Zero means stable?","tip":"A zero eigenvalue real part makes linearisation inconclusive. Inspect nonlinear terms.","source":"Course notes §2.5"},{"level":1,"section":"2.7.2","name":"Nullcline = equilibrium?","tip":"A single nullcline stops only one velocity component. Both nullcline conditions are needed for a steady state.","source":"Course notes §2.7.2"},{"level":2,"section":"3.1","name":"Growth ≠ per capita","tip":"For u̇ = ug(u), the total rate is ug(u), whereas g(u) is the intrinsic growth rate.","source":"Course notes §3.1"},{"level":2,"section":"3.1.1","name":"Wrong SIR threshold","tip":"For the notes’ incidence rSI, the initial threshold is ρ = rS₀/a > 1 with I₀ > 0.","source":"Course notes §3.1.1"},{"level":2,"section":"3.2.2","name":"ODE rule on a map","tip":"Discrete stability requires |f′(N*)| \u003c 1. A negative derivative alone does not guarantee stability.","source":"Course notes §3.2.2"},{"level":2,"section":"3.2.3","name":"Fixed point in a cycle","tip":"Solutions of f(f(N)) = N include fixed points. Remove them to obtain genuine period-two points.","source":"Course notes §3.2.3"},{"level":3,"section":"4.1","name":"Zero value ≠ no flux","tip":"For pure diffusion, zero concentration is Dirichlet; zero normal derivative gives zero diffusive flux.","source":"Course notes §4.1"},{"level":3,"section":"4.1","name":"Wrong hopping scale","tip":"Use d = D/(Δx)² for symmetric diffusion. The taxis scaling is different.","source":"Course notes §4.1"},{"level":3,"section":"4.2","name":"Missing product rule","tip":"With a spatially varying velocity, conservation gives uₜ = −∂ₓ(Vu), including the derivative of V.","source":"Course notes §4.2"},{"level":3,"section":"4.3.1","name":"Moving-frame sign","tip":"For z = x − ct, a stationary profile has uₜ = −cU′, giving DU″ + cU′ + f(U) = 0.","source":"Course notes §4.3.1"},{"level":4,"section":"5.2.2","name":"Unstable to start","tip":"A classical Turing instability starts from stable homogeneous kinetics: negative trace and positive determinant.","source":"Course notes §5.2.2"},{"level":4,"section":"5.2.3","name":"Wrong discriminant","tip":"The discriminant is (Dᵥfᵤ + Dᵤgᵥ)² − 4DᵤDᵥ det(J). Keep the kinetic derivatives in the weighted sum.","source":"Course notes §5.2.3"},{"level":4,"section":"5.2.5","name":"Forgot the domain","tip":"A continuum unstable band is insufficient on a finite domain. Check that an allowed nonzero mode lies inside it.","source":"Course notes §5.2.5"},{"level":4,"section":"5.2.3","name":"Linear ≠ final pattern","tip":"Dispersion relations predict initial mode growth. They do not determine the final nonlinear peak heights.","source":"Course notes §5.2.3"}]}
+</script>
+
+<script>
+(() => {
+'use strict';
+const $ = (id) => document.getElementById(id);
+const BANK = JSON.parse($('bank').textContent);
+const LEVELS = BANK.levels.map(l => [l.id, l.title]);
+const SLOGANS = ['CHECK THE UNITS', 'FIND THE STEADY STATES', 'FOLLOW THE NULLCLINES', 'MIND THE BOUNDARIES', 'TEST THE ASSUMPTIONS', 'CHECK THE ALLOWED MODES', 'MODEL · TEST · PREDICT'];
+
+// ---------- small helpers ----------
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('math-bio-surfers:v1:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('math-bio-surfers:v1:' + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
+};
+const rand = (a, b) => a + Math.random() * (b - a);
+const randInt = (a, b) => Math.floor(rand(a, b + 1));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function deck(items) { let pile = []; return { size: items.length, next() { if (!items.length) return null; if (!pile.length) pile = shuffle(items); return pile.pop(); } }; }
+const fmt = (n) => Math.round(n).toLocaleString('en-GB');
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- world constants ----------
+// A camera well behind the player with a narrow view keeps things ahead larger, so their labels stay readable.
+const LANE_W = 2.4, CAM_BACK = 8, NEAR = -CAM_BACK + 0.9, Z_VIS = 100, Z_FAR = 170;
+const JUMP_V = 9.4, GRAV = 28, MAX_SPEED = 26, SEQ_SPEED = 15;
+const MONO = '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace';
+const DISPLAY = '"Bungee", Impact, "Arial Black", sans-serif';
+const laneX = (l) => (l - 1) * LANE_W;
+const COL = {
+  train: { front: '#d47716', side: '#965113', top: '#f0b56d' },
+  post: { front: '#454a73', side: '#33375a', top: '#5a608c' },
+  barrier: { front: '#ffd166', side: '#c79b3f', top: '#ffe7a8' },
+  gatePost: { front: '#8b93b8', side: '#666d93', top: '#b4bbdb' },
+  beam: { front: '#c7cde6', side: '#9aa1c2', top: '#e3e7f6' },
+  panel: { front: '#131a30', side: '#0c1124', top: '#2a3150' },
+  plate: { front: '#f3f0fb', side: '#bdb7d6', top: '#ffffff' },
+  board: { front: '#2e2350', side: '#241b40', top: '#3d2f66' },
+};
+
+// ---------- canvas and projection ----------
+const cv = $('view');
+const ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+const view = { s0: 50, F: 250, groundY: 0, camH: 4, horizon: 0 };
+const cam = { x: 0 };
+function resize() {
+  const dpr = DPR = Math.min(3, window.devicePixelRatio || 1);
+  const r = cv.getBoundingClientRect();
+  W = Math.max(1, r.width); H = Math.max(1, r.height);
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const s0 = Math.min(0.94 * W / (3 * LANE_W + 0.8), 0.115 * H);
+  const groundY = H * 0.8;
+  const horizonTarget = H * (W < H ? 0.3 : 0.34);
+  const camH = clamp((groundY - horizonTarget) / s0, 2.6, 9);
+  Object.assign(view, { s0, F: s0 * CAM_BACK, groundY, camH, horizon: groundY - camH * s0 });
+  if (typeof placeLanes === 'function') placeLanes();
+}
+function P(x, y, z) {
+  const s = view.F / (z + CAM_BACK);
+  return [W / 2 + (x - cam.x) * s, view.horizon + (view.camH - y) * s, s];
+}
+function quad(a, b, c, d, fill) {
+  ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.lineTo(d[0], d[1]); ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+}
+// Axis-aligned box; returns the near face as a screen rectangle (null when the near face is behind the clip plane).
+function box(x0, x1, y0, y1, z0, z1, col) {
+  if (z1 <= NEAR) return null;
+  const zn = Math.max(z0, NEAR), zf = Math.max(z1, NEAR + 0.01);
+  const nbl = P(x0, y0, zn), nbr = P(x1, y0, zn), ntl = P(x0, y1, zn), ntr = P(x1, y1, zn);
+  const fbl = P(x0, y0, zf), fbr = P(x1, y0, zf), ftl = P(x0, y1, zf), ftr = P(x1, y1, zf);
+  if (x0 > cam.x) quad(nbl, ntl, ftl, fbl, col.side);
+  if (x1 < cam.x) quad(nbr, ntr, ftr, fbr, col.side);
+  if (y1 < view.camH) quad(ntl, ntr, ftr, ftl, col.top);
+  if (z0 < NEAR) return null;
+  quad(nbl, nbr, ntr, ntl, col.front);
+  return { x: nbl[0], y: ntl[1], w: nbr[0] - nbl[0], h: nbl[1] - ntl[1], s: nbl[2] };
+}
+// Centred text fitted into a w × h box. Long text with spaces goes onto two lines when that makes it bigger.
+// Sizes and positions snap to whole pixels so moving signs shimmer less; text too small to read is skipped.
+function textIn(text, cx, cy, w, h, family, weight, color, maxPx) {
+  ctx.font = `${weight} 100px ${family}`;
+  const cap = maxPx || 1e9;
+  let lines = [text], px = Math.min(h, (w / (ctx.measureText(text).width || 1)) * 100, cap);
+  if (text.includes(' ') && px < h * 0.62) {
+    const mid = text.length / 2;
+    let cut = -1;
+    for (let i = 0; i < text.length; i++) if (text[i] === ' ' && (cut < 0 || Math.abs(i - mid) < Math.abs(cut - mid))) cut = i;
+    const two = [text.slice(0, cut), text.slice(cut + 1)];
+    const px2 = Math.min(h / 2.25, (w / (Math.max(...two.map((t) => ctx.measureText(t).width)) || 1)) * 100, cap);
+    if (px2 > px * 1.15) { lines = two; px = px2; }
+  }
+  px = Math.floor(px);
+  if (px < 7) return;
+  ctx.font = `${weight} ${px}px ${family}`;
+  ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const snap = (v) => Math.round(v * DPR) / DPR, lh = px * 1.12;
+  lines.forEach((t, i) => ctx.fillText(t, snap(cx), snap(cy + (i - (lines.length - 1) / 2) * lh)));
+}
+function rrect(x, y, w, h, r) {
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+}
+
+// ---------- settings ----------
+let selectedLevels = new Set([Number(store.get('level', 1))]);
+if (!BANK.levels.some(l => selectedLevels.has(l.id))) selectedLevels = new Set([1]);
+let runMode = store.get('mode', 'runner') === 'study' ? 'study' : 'runner';
+let studyQueue = [];
+let chapterProgress = store.get('progress', {});
+if (!chapterProgress || typeof chapterProgress !== 'object' || Array.isArray(chapterProgress)) chapterProgress = {};
+let soundOn = store.get('sound', false);
+let best = store.get('best', 0);
+
+// ---------- game state ----------
+const player = { lane: 1, x: 0, y: 0, vy: 0, lean: 0 };
+let G = makeWorld('menu');
+function makeWorld(state, prev) {
+  return {
+    state, t: 0, dist: prev ? prev.dist : 0, speed: 12, bonus: 0, coins: 0, lives: 3,
+    asked: 0, correct: 0, seqDone: 0,
+    objs: prev ? prev.objs.filter((o) => o.scenery) : [],
+    frontier: 34, sceneryFrontier: prev ? prev.sceneryFrontier : 0, lampN: prev ? prev.lampN : 0, sloganN: prev ? prev.sloganN : 0,
+    rowsUntil: 2, challengeN: 0, seq: null, invuln: 0, shake: 0, jumpBuf: 0, cardAt: 0,
+    missed: [], missedKeys: new Set(), decks: null,
+  };
+}
+function sampleQuestions(level) {
+  const all = BANK.gates.filter(g => g.level === level);
+  const selected = [];
+  for (const d of [1,2,3]) selected.push(...shuffle(all.filter(g => g.difficulty === d)).slice(0,4));
+  const used = new Set(selected.map(g => g.id));
+  selected.push(...shuffle(all.filter(g => !used.has(g.id))).slice(0, BANK.runQuestions-selected.length));
+  return shuffle(selected).slice(0,BANK.runQuestions);
+}
+function startRun() {
+  const level = [...selectedLevels][0];
+  if (!BANK.levels.some(l => l.id === level)) return;
+  runMode = $('modeSelect').value === 'study' ? 'study' : 'runner';
+  store.set('mode', runMode);
+  const gates = sampleQuestions(level);
+  const seqs = BANK.sequences.filter(s => s.level === level);
+  const bugs = BANK.bugs.filter(b => b.level === level);
+  G = makeWorld('run', G); G.mode = runMode; G.level = level; G.target = gates.length; G.finished = false;
+  G.decks = { gates: deck(gates), seqs: deck(seqs), bugs: deck(bugs) };
+  studyQueue = gates.slice();
+  Object.assign(player, { lane: 1, x: 0, y: 0, vy: 0, lean: 0 });
+  for (const id of ['menu','overOv','qOv','cardOv','pauseOv']) hide(id);
+  show('hud'); document.body.classList.toggle('study-session',runMode === 'study');
+  if (document.activeElement?.blur) document.activeElement.blur();
+  updateHud(true); last = performance.now();
+  if (runMode === 'study') nextStudyQuestion();
+}
+function nextStudyQuestion() {
+  const item = studyQueue.shift();
+  if (!item) { G.finished = true; gameOver(); return; }
+  askQuestion({item,order:shuffle([0,1,2])});
+}
+function noteProgress() {
+  if (!G.finished || G.asked !== G.target) return;
+  const old = chapterProgress[G.level] || {};
+  const percent = Math.round(100*G.correct/G.asked);
+  chapterProgress[G.level] = {bestPercent:Math.max(old.bestPercent || 0,percent),
+    completed:Boolean(old.completed || G.correct/G.asked >= BANK.passAccuracy),
+    sessions:(old.sessions || 0)+1,lastMode:G.mode};
+  store.set('progress',chapterProgress);
+}
+const currentScore = () => G.mode === 'study' ? G.bonus : Math.floor(G.dist / 2) + G.bonus;
+
+// ---------- spawning ----------
+function nextChallengeKind() {
+  const hasSeq = G.decks.seqs.size > 0, hasGate = G.decks.gates.size > 0;
+  if (hasSeq && !G.seq && (G.challengeN % 3 === 2 || !hasGate)) return 'seq';
+  return hasGate ? 'gate' : null;
+}
+function spawnAhead() {
+  const far = Math.max(150, G.speed * 8.5 + 40);
+  while (G.sceneryFrontier < far) {
+    const z = G.sceneryFrontier;
+    G.objs.push({ kind: 'lamp', side: -1, z, prevZ: z, scenery: true }, { kind: 'lamp', side: 1, z, prevZ: z, scenery: true });
+    if (G.lampN % 4 === 1) G.objs.push({ kind: 'board', side: G.lampN % 8 === 1 ? -1 : 1, z: z + 7, prevZ: z + 7, text: SLOGANS[G.sloganN++ % SLOGANS.length], scenery: true });
+    G.lampN++; G.sceneryFrontier += 14;
+  }
+  if (G.state !== 'run') return;
+  let guard = 0;
+  while (G.frontier < far && guard++ < 20) {
+    if (G.rowsUntil > 0) { G.rowsUntil--; spawnRow(G.rowsUntil < 2 && nextChallengeKind() === 'gate'); }
+    else { spawnChallenge(); G.rowsUntil = randInt(3, 4); }
+  }
+}
+function spawnRow(easy) {
+  const z = G.frontier, d = Math.min(1, G.t / 150), r = Math.random(), L = shuffle([0, 1, 2]);
+  const lanes = [null, null, null];
+  if (easy) lanes[L[0]] = Math.random() < 0.6 ? 'train' : 'barrier';
+  else if (r < 0.36 - 0.1 * d) lanes[L[0]] = 'train';
+  else if (r < 0.56 - 0.12 * d) lanes[L[0]] = 'barrier';
+  else if (r < 0.78) { lanes[L[0]] = 'train'; lanes[L[1]] = 'train'; }
+  else if (r < 0.91) { lanes[L[0]] = 'train'; lanes[L[1]] = 'barrier'; }
+  else { lanes[0] = lanes[1] = lanes[2] = 'barrier'; }
+  let maxLen = 0;
+  lanes.forEach((k, lane) => {
+    if (k === 'train') { const len = rand(7, 12.5); maxLen = Math.max(maxLen, len); G.objs.push({ kind: 'train', lane, z, prevZ: z, len, bug: G.decks.bugs.next() }); }
+    else if (k === 'barrier') G.objs.push({ kind: 'barrier', lane, z, prevZ: z, bug: G.decks.bugs.next() });
+  });
+  const free = [0, 1, 2].filter((l) => lanes[l] !== 'train');
+  if (free.length && Math.random() < 0.8) {
+    const cl = pick(free);
+    if (lanes[cl] === 'barrier') {
+      for (let i = -2; i <= 2; i++) G.objs.push({ kind: 'coin', lane: cl, z: z + i * 1.2, prevZ: z + i * 1.2, y: 0.6 + 1.05 * (1 - (i / 2.6) ** 2) });
+    } else {
+      for (let i = 0; i < 5; i++) G.objs.push({ kind: 'coin', lane: cl, z: z + 2 + i * 2.2, prevZ: z + 2 + i * 2.2, y: 0.6 });
+    }
+  }
+  G.frontier = z + maxLen + Math.max(14, G.speed * 0.95);
+}
+function spawnChallenge() {
+  const kind = nextChallengeKind();
+  G.challengeN++;
+  // A question gate pauses the run, so it only needs a short clear stretch either side.
+  if (kind === 'gate') {
+    const item = G.decks.gates.next(), z = G.frontier + 18;
+    G.objs.push({ kind: 'gate', z, prevZ: z, item, order: shuffle([0, 1, 2]) });
+    G.frontier = z + Math.max(22, G.speed * 1.8);
+  } else if (kind === 'seq') {
+    const item = G.decks.seqs.next(), spacing = SEQ_SPEED * 5;  // about 5 s between rows
+    let display = shuffle(item.steps);
+    for (let i = 0; i < 5 && display.join('|') === item.steps.join('|'); i++) display = shuffle(item.steps);
+    const s = { item, progress: 0, rows: [], spacing, display };
+    const z0 = G.frontier + G.speed * 4.5 + 6;
+    coinRuns(G.frontier + 8, z0 - 10);
+    item.steps.forEach((_, k) => {
+      const z = z0 + k * spacing;
+      const row = { kind: 'row', z, prevZ: z, correctLane: randInt(0, 2), tokens: [] };
+      s.rows.push(row); G.objs.push(row);
+    });
+    relabel(s);
+    G.seq = s;
+    G.frontier = s.rows[s.rows.length - 1].z + Math.max(22, G.speed * 1.8);
+  } else {
+    G.frontier += 10;
+  }
+}
+function coinRuns(zA, zB) {
+  for (let z = zA; z + 7 < zB; z += 16) {
+    const lane = randInt(0, 2);
+    for (let i = 0; i < 4; i++) G.objs.push({ kind: 'coin', lane, z: z + i * 2.2, prevZ: z + i * 2.2, y: 0.6 });
+  }
+}
+// Label the pending rows so the nearest asks for the next step, the one after for the step after, and so on.
+function relabel(s) {
+  const steps = s.item.steps;
+  const pending = s.rows.filter((r) => !r.done).sort((a, b) => a.z - b.z);
+  pending.forEach((r, i) => {
+    const k = s.progress + i;
+    if (k >= steps.length) { r.done = true; r.dead = true; return; }
+    const need = steps[k];
+    const later = steps.filter((t, j) => j > k && t !== need), earlier = steps.filter((t, j) => j < k && t !== need);
+    const decoys = shuffle(later).concat(shuffle(earlier)).slice(0, 2);
+    const others = [0, 1, 2].filter((l) => l !== r.correctLane);
+    r.tokens = [];
+    r.tokens[r.correctLane] = { text: need, correct: true };
+    others.forEach((l, j) => { r.tokens[l] = decoys[j] ? { text: decoys[j], correct: false } : null; });
+  });
+}
+function addRowAfterLast(s) {
+  const pending = s.rows.filter((r) => !r.done);
+  const base = pending.length ? Math.max(...pending.map((r) => r.z)) : 0;
+  const gap = pending.length ? s.spacing : Math.max(s.spacing, G.speed * 1.6);
+  for (const o of G.objs) if (!o.scenery && o.z > base) { o.z += gap; o.prevZ += gap; }
+  G.frontier += gap;
+  const row = { kind: 'row', z: base + gap, prevZ: base + gap, correctLane: randInt(0, 2), tokens: [] };
+  s.rows.push(row); G.objs.push(row);
+}
+
+// ---------- update ----------
+function nearestLane() { return clamp(Math.round(player.x / LANE_W) + 1, 0, 2); }
+function laneBlocked(lane) { return G.objs.some((o) => o.kind === 'train' && o.lane === lane && o.z < 1.0 && o.z + o.len > -0.8); }
+function move(dir) {
+  if (G.state !== 'run') return;
+  const target = clamp(player.lane + dir, 0, 2);
+  if (target === player.lane) return;
+  if (laneBlocked(target)) { G.shake = 0.35; sfx('bump'); return; }
+  player.lane = target; sfx('swish');
+}
+function jump() { if (G.state === 'run') G.jumpBuf = 0.16; }
+
+function update(dt) {
+  if (G.state === 'paused' || G.state === 'card' || G.state === 'question' || G.state === 'over') return;
+  const running = G.state === 'run';
+  if (running) {
+    G.t += dt;
+    // the pace builds slowly, and eases right down while collecting steps in order
+    let target = Math.min(MAX_SPEED, 13.5 + G.t * 0.06);
+    if (G.seq && G.seq.introduced) target = Math.min(target, SEQ_SPEED);
+    G.speed += (target - G.speed) * Math.min(1, dt * 1.5);
+  } else G.speed = 12;
+  const dz = G.speed * dt;
+  G.dist += dz;
+  for (const o of G.objs) { o.prevZ = o.z; o.z -= dz; }
+  G.frontier -= dz; G.sceneryFrontier -= dz;
+
+  const tx = laneX(player.lane);
+  player.x += (tx - player.x) * Math.min(1, dt * 16);
+  player.lean += ((tx - player.x) * 0.16 - player.lean) * Math.min(1, dt * 12);
+  if (G.jumpBuf > 0) {
+    G.jumpBuf -= dt;
+    if (player.y === 0 && player.vy === 0) { player.vy = JUMP_V; G.jumpBuf = 0; sfx('jump'); }
+  }
+  if (player.y > 0 || player.vy > 0) {
+    player.vy -= GRAV * dt; player.y += player.vy * dt;
+    if (player.y <= 0) { player.y = 0; player.vy = 0; }
+  }
+  cam.x += (player.x * 0.55 - cam.x) * Math.min(1, dt * 6);
+  G.shake = Math.max(0, G.shake - dt * 3);
+
+  if (running) { G.invuln = Math.max(0, G.invuln - dt); interact(); }
+  if (G.state === 'run' && G.seq && !G.seq.introduced) {
+    const first = Math.min(...G.seq.rows.filter((r) => !r.done).map((r) => r.z));
+    if (first < G.speed * 4.4) introSequence(G.seq);
+  }
+  G.objs = G.objs.filter((o) => !o.dead && o.z + (o.len || 0.6) > NEAR - 1);
+  spawnAhead();
+  if (G.state === 'run') { updateHud(); updateBanner(); }
+}
+function interact() {
+  const lane = nearestLane();
+  for (const o of G.objs) {
+    if (G.state !== 'run') return;
+    const crossed = o.prevZ > 0 && o.z <= 0;
+    const inLane = o.lane !== undefined && Math.abs(player.x - laneX(o.lane)) < 1.05;
+    switch (o.kind) {
+      case 'coin':
+        if (crossed && inLane && Math.abs(player.y + 0.6 - o.y) < 0.85) { o.dead = true; G.coins++; G.bonus += 10; sfx('coin'); }
+        break;
+      case 'train':
+        if (!G.invuln && inLane && o.z < 0.45 && o.z + o.len > -0.45) crash(o);
+        break;
+      case 'barrier':
+        if (!G.invuln && crossed && inLane && player.y < 0.9) crash(o);
+        break;
+      case 'gate':
+        if (o.prevZ > 2.5 && o.z <= 2.5 && !o.done) { o.done = true; askQuestion(o); }
+        break;
+      case 'row':
+        if (crossed && !o.done) { o.done = true; resolveRow(o, lane); }
+        break;
+    }
+  }
+}
+// ---------- question pop-up (the run waits while it is open) ----------
+const Q = { mode: null, gate: null, answered: false, at: 0 };
+const qOptEls = [...document.querySelectorAll('.q-opt')];
+function openQ() {
+  G.state = 'question'; Q.at = performance.now(); Q.answered = false;
+  hideChallenge(); show('qOv'); $('qCard').scrollTop = 0;
+  setTimeout(() => { if (G.state === 'question') $('qCard').focus({ preventScroll: true }); }, 30);
+}
+function askQuestion(gate) {
+  const item = gate.item;
+  Q.mode = 'ask'; Q.gate = gate;
+  $('qTag').textContent = `LEVEL ${item.level} · CHAPTER ${BANK.levels.find(l=>l.id===item.level).chapter} · QUESTION ${G.asked+1}/${G.target}`;
+  $('qPrompt').textContent = item.prompt;
+  qOptEls.forEach((b, i) => { b.querySelector('span').textContent = item.options[gate.order[i]]; b.className = 'q-opt'; b.disabled = false; });
+  $('qOpts').hidden = false; $('qResult').hidden = true; $('qGo').hidden = true; $('qSteps').hidden = true;
+  $('qHint').textContent = 'Tap an answer, or press 1, 2 or 3';
+  openQ();
+}
+function introSequence(s) {
+  s.introduced = true;
+  Q.mode = 'intro'; Q.gate = null;
+  $('qTag').textContent = `LEVEL ${s.item.level} · COLLECT IN ORDER`;
+  $('qPrompt').textContent = s.item.title;
+  $('qOpts').hidden = true;
+  $('qVerdict').textContent = `${s.item.steps.length} steps`; $('qVerdict').className = 'verdict';
+  $('qWhy').textContent = 'Here they are in random order. Each row on the track shows three of them, one per lane: steer into the one that comes next. A step out of order costs a life.';
+  $('qResult').hidden = false;
+  const qs = $('qSteps'); qs.replaceChildren();
+  s.display.forEach((t) => { const c = document.createElement('span'); c.className = 'chip-step todo'; c.textContent = t; qs.append(c); });
+  qs.hidden = false;
+  $('qGo').textContent = 'Go'; $('qGo').hidden = false;
+  $('qHint').textContent = 'Space or Enter also starts';
+  openQ();
+}
+function answerQ(i) {
+  if (Q.mode !== 'ask' || Q.answered || performance.now() - Q.at < 350) return;
+  Q.answered = true; Q.at = performance.now();
+  const item = Q.gate.item, chosen = Q.gate.order[i], right = Q.gate.order.indexOf(item.answer), ok = chosen === item.answer;
+  G.asked++;
+  qOptEls.forEach((b) => { b.disabled = true; });
+  qOptEls[right].classList.add('right');
+  if (ok) { G.correct++; G.bonus += 100; sfx('good'); }
+  else {
+    qOptEls[i].classList.add('wrong');
+    if (G.mode !== 'study') G.lives--; sfx('bad');
+    const rv = { key: 'g:' + item.prompt, kind: `Level ${item.level} · Question`, q: item.prompt, a: item.options[item.answer], why: item.why + '\n\n' + item.source };
+    if (!G.missedKeys.has(rv.key)) { G.missedKeys.add(rv.key); G.missed.push(rv); }
+  }
+  $('qVerdict').textContent = ok ? '✓ Correct  +100' : '× Not quite';
+  $('qVerdict').className = 'verdict ' + (ok ? 'good' : 'bad');
+  $('qWhy').textContent = item.why + '\n\n' + item.source;
+  $('qResult').hidden = false;
+  $('qGo').textContent = G.asked >= G.target ? 'See results' : G.mode === 'study' ? 'Next question' : ok ? 'Keep going' : G.lives > 0 ? `Keep going (${G.lives} ${G.lives === 1 ? 'life' : 'lives'} left)` : 'See results';
+  $('qGo').hidden = false;
+  $('qHint').textContent = 'Space or Enter also continues';
+  updateHud(true);
+  $('qGo').focus({ preventScroll: true });
+}
+function continueQ() {
+  if (G.state !== 'question' || performance.now() - Q.at < 350 || (Q.mode === 'ask' && !Q.answered)) return;
+  hide('qOv');
+  if (G.asked >= G.target) { G.finished = true; gameOver(); return; }
+  if (G.mode === 'study') { nextStudyQuestion(); return; }
+  if (G.lives <= 0) { gameOver(); return; }
+  G.state = 'run';
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  last = performance.now();
+}
+function resolveRow(row, lane) {
+  const s = G.seq;
+  if (!s || !s.rows.includes(row)) return;
+  const tok = row.tokens[lane];
+  row.picked = lane;
+  const steps = s.item.steps;
+  if (tok && tok.correct) {
+    s.progress++; G.bonus += 40; sfx('good');
+    if (s.progress >= steps.length) {
+      G.bonus += 200; G.seqDone++; G.seq = null;
+      toast('In order  +200', steps.join('  →  '), 'good', 4200);
+    }
+  } else {
+    const expected = steps[s.progress];
+    addRowAfterLast(s); relabel(s);
+    mistake({
+      kind: 'Out of order', title: s.item.title,
+      rows: [['You took', tok ? tok.text : '(nothing)', 'wrong'], ['Next was', expected, 'right'], ['Full order', steps.join(' → '), '']],
+      why: s.item.why + '\n\n' + s.item.source,
+      review: { key: 's:' + s.item.title, kind: `Level ${s.item.level} · In order`, q: s.item.title, a: steps.join(' → '), why: s.item.why + '\n\n' + s.item.source },
+    });
+  }
+}
+function crash(o) {
+  const b = o.bug || { name: 'Bug', tip: '', level: '' };
+  G.shake = 1;
+  mistake({
+    kind: 'Crashed into a misconception', title: b.name, rows: [], why: b.tip + '\n\n' + (b.source || ''),
+    review: { key: 'b:' + b.name, kind: `Level ${b.level} · Misconception`, q: b.name, a: '', why: b.tip + '\n\n' + (b.source || '') },
+  });
+}
+
+// ---------- feedback, pause, game over ----------
+function mistake(info) {
+  G.lives--; G.state = 'card'; G.cardAt = performance.now(); sfx('bad');
+  if (!G.missedKeys.has(info.review.key)) { G.missedKeys.add(info.review.key); G.missed.push(info.review); }
+  $('fbKind').textContent = info.kind;
+  $('fbTitle').textContent = info.title;
+  const dl = $('fbAnswers'); dl.replaceChildren();
+  for (const [label, value, cls] of info.rows) {
+    const wrap = document.createElement('div'); wrap.className = 'ans';
+    const dt = document.createElement('dt'); dt.textContent = label;
+    const dd = document.createElement('dd'); dd.textContent = value; if (cls) dd.className = cls;
+    wrap.append(dt, dd); dl.append(wrap);
+  }
+  dl.hidden = !info.rows.length;
+  $('fbWhy').textContent = info.why;
+  $('fbBtn').textContent = G.lives > 0 ? `Keep going (${G.lives} ${G.lives === 1 ? 'life' : 'lives'} left)` : 'See results';
+  updateHud(true);
+  hideChallenge();
+  show('cardOv');
+  setTimeout(() => { if (G.state === 'card') $('fbBtn').focus({ preventScroll: true }); }, 50);
+}
+function continueFromCard() {
+  if (G.state !== 'card' || performance.now() - G.cardAt < 450) return;
+  hide('cardOv');
+  if (G.lives <= 0) { gameOver(); return; }
+  G.state = 'run'; G.invuln = 1.5;
+  for (const o of G.objs) if ((o.kind === 'train' || o.kind === 'barrier') && o.z < 14 && o.z + (o.len || 0) > -2) o.dead = true;
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  last = performance.now();
+}
+function pause() {
+  if (G.state !== 'run') return;
+  G.state = 'paused'; show('pauseOv'); $('resumeBtn').focus({ preventScroll: true });
+}
+function resume() {
+  if (G.state !== 'paused') return;
+  hide('pauseOv'); G.state = 'run'; last = performance.now();
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+}
+function gameOver() {
+  if (G.state === 'over') return;
+  G.state = 'over';
+  for (const id of ['qOv','cardOv','pauseOv']) hide(id);
+  document.body.classList.remove('study-session');
+  noteProgress();
+  const complete = G.finished && G.correct/G.asked >= BANK.passAccuracy;
+  $('resultHeading').textContent = complete ? '✓ Level complete' : G.finished ? 'Keep practising' : 'Session ended';
+  hide('hud'); hideChallenge();
+  const score = currentScore();
+  const isBest = score > best;
+  if (isBest) { best = score; store.set('best', best); }
+  $('finalScore').textContent = fmt(score);
+  const bits = [`Level ${G.level}: ${BANK.levels.find(l=>l.id===G.level).short}`, `${G.correct} of ${G.asked} questions right`, `${G.asked}/${G.target} attempted`, G.mode === 'study' ? 'Study mode' : 'Runner mode'];
+  if (G.finished) bits.push(complete ? 'Completion badge earned' : 'Aim for at least 9/12 to complete this level');
+  if (G.seqDone) bits.push(`${G.seqDone} ${G.seqDone === 1 ? 'sequence' : 'sequences'} in order`);
+  if (G.mode !== 'study') bits.push(`${G.coins} ∇ coins`, `${fmt(G.dist)} m`);
+  $('finalStats').textContent = bits.join(' · ') + (isBest ? '. New best on this device.' : `. Best on this device: ${fmt(best)}.`);
+  const list = $('reviewList'); list.replaceChildren();
+  for (const m of G.missed) {
+    const li = document.createElement('li');
+    const k = document.createElement('span'); k.className = 'rk'; k.textContent = m.kind;
+    const q = document.createElement('span'); q.className = 'rq'; q.textContent = m.q;
+    li.append(k, q);
+    if (m.a) { const a = document.createElement('span'); a.className = 'ra'; a.textContent = m.a; li.append(a); }
+    if (m.why) { const w = document.createElement('span'); w.className = 'rw'; w.textContent = m.why; li.append(w); }
+    list.append(li);
+  }
+  $('reviewSec').hidden = !G.missed.length;
+  // this device's top ten, and a one-line result to paste into the class thread
+  const run = { score, right: G.correct, asked: G.asked, seqs: G.seqDone, mode:G.mode, levels: [...selectedLevels].sort((a, b) => a - b), at: Date.now() };
+  let runs = store.get('runs', []);
+  if (!Array.isArray(runs)) runs = [];
+  runs = runs.concat([run]).sort((a, b) => b.score - a.score || a.at - b.at).slice(0, 10);
+  store.set('runs', runs);
+  const bl = $('bestsList'); bl.replaceChildren();
+  for (const r of runs) {
+    const li = document.createElement('li'); if (r.at === run.at) li.className = 'now';
+    const sc = document.createElement('b'); sc.textContent = fmt(r.score);
+    const d = document.createElement('span');
+    d.textContent = `${r.right}/${r.asked} right · ${levelsLabel(r.levels || [])} · ${r.mode || 'runner'} · ${new Date(r.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}${r.at === run.at ? ' · this run' : ''}`;
+    li.append(sc, d); bl.append(li);
+  }
+  lastResult = `Math Bio Surfers (${G.mode}): ${fmt(score)} points · ${G.correct}/${G.asked} questions right${G.seqDone ? ` · ${G.seqDone} in order` : ''} · ${levelsLabel(run.levels)}`;
+  $('copyBtn').textContent = 'Copy my result'; $('copyText').hidden = true;
+  $('copyNote').textContent = 'Your result stays on this device. You can copy it to share yourself.';
+  show('overOv'); $('againBtn').focus({ preventScroll: true });
+}
+let lastResult = '';
+function levelsLabel(ws) {
+  if (!ws.length) return '';
+  const parts = []; let a = ws[0], b = ws[0];
+  for (const w of ws.slice(1).concat([null])) {
+    if (w === b + 1) { b = w; continue; }
+    parts.push(a === b ? `${a}` : `${a}–${b}`); a = b = w;
+  }
+  return (ws.length === 1 ? 'Level ' : 'Levels ') + parts.join(', ');
+}
+function copyResult() {
+  const inp = $('copyText');
+  const fallback = () => {
+    inp.value = lastResult; inp.hidden = false; inp.focus(); inp.select();
+    $('copyNote').textContent = 'Copy the text above to share your result yourself.';
+  };
+  try {
+    navigator.clipboard.writeText(lastResult).then(() => {
+      $('copyBtn').textContent = 'Copied';
+      $('copyNote').textContent = 'Your result is ready to paste.';
+    }, fallback);
+  } catch (e) { fallback(); }
+}
+function toMenu() {
+  document.body.classList.remove('study-session');
+  G = makeWorld('menu', G);
+  Object.assign(player, { lane: 1, x: 0, y: 0, vy: 0, lean: 0 });
+  hide('overOv'); hide('pauseOv'); hide('cardOv'); hide('qOv'); hide('hud'); hideChallenge();
+  renderMenu(); show('menu');
+}
+
+// ---------- HUD, banners, toast ----------
+const sBanner = $('sBanner'), laneChips = $('laneChips');
+const laneEls = [...laneChips.querySelectorAll('.lane-chip')];
+let hudCache = '', seqKey = '', laneKey = '';
+function hideChallenge() {
+  sBanner.hidden = true; laneChips.hidden = true;
+  seqKey = ''; laneKey = '';
+}
+// Answer cards sit between the banner and the player, never under the banner.
+function placeLanes() {
+  const app = $('app').getBoundingClientRect();
+  let top = view.horizon + (view.groundY - view.horizon) * 0.2;
+  for (const b of [sBanner]) if (!b.hidden) top = Math.max(top, b.querySelector('.banner-box').getBoundingClientRect().bottom - app.top + 12);
+  laneChips.style.top = Math.round(top) + 'px';
+}
+function updateHud(force) {
+  const key = `${currentScore()}|${G.correct}|${G.asked}|${G.lives}|${G.mode}|${G.level}`;
+  if (!force && key === hudCache) return;
+  hudCache = key;
+  $('score').textContent = fmt(currentScore());
+  $('tally').textContent = `L${G.level || 1} · ${G.asked || 0}/${G.target || 12} answered · ${G.correct} right`;
+  const lv = $('lives'); lv.hidden = G.mode === 'study';
+  if (lv.children.length !== 3) { lv.replaceChildren(); for (let i = 0; i < 3; i++) { const p = document.createElement('span'); p.className = 'pip'; lv.append(p); } }
+  [...lv.children].forEach((p, i) => p.classList.toggle('lost', i >= G.lives));
+  lv.setAttribute('aria-label', `${G.lives} lives left`);
+}
+function updateBanner() {
+  let laneTexts = null;
+  {
+    const s = G.seq;
+    const pend = s ? s.rows.filter((r) => !r.done).sort((a, b) => a.z - b.z) : [];
+    if (s && s.introduced && pend.length && pend[0].z < G.speed * 6) {
+      const key = s.item.title + '|' + s.progress;
+      if (key !== seqKey) {
+        seqKey = key;
+        const n = s.item.steps.length;
+        $('sTag').textContent = `LEVEL ${s.item.level} · COLLECT IN ORDER`;
+        $('sTitle').textContent = s.item.title;
+        const g = $('sGoal'), bold = document.createElement('b');
+        g.replaceChildren();
+        bold.textContent = `Step ${s.progress + 1} of ${n}:`;
+        g.append(bold, ' steer into the step that comes next.');
+        // Steps collected so far, in order, then the steps still to place, in the shuffled order from the intro
+        const chips = $('sChips'); chips.replaceChildren();
+        const done = s.item.steps.slice(0, s.progress);
+        done.forEach((t, i) => { const c = document.createElement('span'); c.className = 'chip-step'; c.textContent = `${i + 1} ✓ ${t}`; chips.append(c); });
+        const left = s.display.filter((t) => !done.includes(t));
+        if (left.length) {
+          const lab = document.createElement('span'); lab.className = 'chips-label'; lab.textContent = done.length ? 'Still to place' : 'Steps to place'; chips.append(lab);
+          left.forEach((t) => { const c = document.createElement('span'); c.className = 'chip-step todo'; c.textContent = t; chips.append(c); });
+        }
+        chips.hidden = false;
+        sBanner.hidden = false; placeLanes();
+      }
+      if (pend[0].z < s.spacing + 5) laneTexts = pend[0].tokens.map((t) => (t ? t.text : '—'));
+    } else if (!sBanner.hidden) { sBanner.hidden = true; seqKey = ''; }
+  }
+  const key = laneTexts ? laneTexts.join('|') : '';
+  if (key !== laneKey) {
+    laneKey = key;
+    // let narrow cards wrap code after a dot or an opening bracket, not mid-name
+    if (laneTexts) laneEls.forEach((el, l) => { el.querySelector('.lane-text').textContent = laneTexts[l].replace(/([.(])/g, '$1​'); });
+    laneChips.hidden = !laneTexts;
+    if (laneTexts) placeLanes();
+  }
+  if (laneTexts) { const lane = nearestLane(); laneEls.forEach((el, l) => el.classList.toggle('here', l === lane)); }
+}
+let toastTimer = 0;
+function toast(head, body, cls, ms) {
+  const t = $('toast');
+  $('toastHead').textContent = head; $('toastBody').textContent = body || '';
+  t.className = 'toast show ' + (cls || '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.className = 'toast'; }, ms || 2400);
+}
+function show(id) { $(id).hidden = false; }
+function hide(id) { $(id).hidden = true; }
+
+// ---------- sound and music (on by default; audio starts at the first click, tap or key press) ----------
+let actx = null, sfxBus = null, musicBus = null, noiseBuf = null, audioUnlocked = false;
+function makeNoise(ac) {
+  const b = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.5), ac.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return b;
+}
+function ensureAudio() {
+  if (!audioUnlocked) return false;
+  if (actx) { if (actx.state !== 'running' && actx.state !== 'closed') actx.resume().catch(() => {}); return true; }
+  try {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    const comp = actx.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.ratio.value = 4; comp.connect(actx.destination);
+    musicBus = actx.createGain(); musicBus.gain.value = 0; musicBus.connect(comp);
+    sfxBus = actx.createGain(); sfxBus.connect(comp);
+    noiseBuf = makeNoise(actx);
+    return true;
+  } catch (e) { actx = null; return false; }
+}
+const TONES = { coin: [988, 0.07, 'square', 0.03], good: [660, 0.16, 'triangle', 0.08], bad: [140, 0.32, 'sawtooth', 0.06], jump: [440, 0.09, 'sine', 0.05], bump: [110, 0.1, 'square', 0.04], swish: [320, 0.05, 'sine', 0.02] };
+function sfx(name) {
+  if (!soundOn || !ensureAudio()) return;
+  try {
+    const [f, d, type, vol] = TONES[name];
+    const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime;
+    o.type = type; o.frequency.setValueAtTime(f, t0);
+    if (name === 'good') o.frequency.linearRampToValueAtTime(f * 1.5, t0 + d);
+    g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+    o.connect(g); g.connect(sfxBus); o.start(t0); o.stop(t0 + d + 0.02);
+  } catch (e) { /* audio unavailable */ }
+}
+
+// An original tune in the style of early-90s DOS space shooters: dark A minor at 100 bpm, a driving
+// sixteenth-note bass that leans on the i and iv chords, a warm FM lead in a low register, quiet
+// tracker-style arpeggios, a filtered pad and a small drum kit, all synthesised (no audio files).
+const BPM = 100, STEP = 60 / BPM / 4;
+const mtof = (m) => 440 * 2 ** ((m - 69) / 12);
+const CH = {
+  Am: { root: 45, tones: [57, 60, 64] }, Dm: { root: 38, tones: [57, 62, 65] }, F: { root: 41, tones: [57, 60, 65] },
+  A: { root: 45, tones: [57, 61, 64] }, G: { root: 43, tones: [55, 59, 62] }, Em: { root: 40, tones: [55, 59, 64] },
+};
+// lead notes per bar: [step (0–15), MIDI note, length in steps]
+const LEAD_A = [
+  [[0, 69, 4], [4, 72, 2], [6, 71, 2], [8, 69, 4], [12, 64, 4]],
+  [[0, 65, 4], [4, 69, 2], [6, 67, 2], [8, 65, 2], [10, 64, 2], [12, 62, 4]],
+  [[0, 64, 2], [2, 69, 2], [4, 72, 4], [8, 76, 4], [12, 74, 2], [14, 72, 2]],
+  [[0, 73, 6], [6, 71, 2], [8, 69, 8]],
+];
+const LEAD_A2 = [
+  [[0, 76, 4], [4, 77, 2], [6, 76, 2], [8, 74, 2], [10, 72, 2], [12, 71, 4]],
+  [[0, 74, 6], [6, 72, 2], [8, 69, 4], [12, 65, 4]],
+  [[0, 72, 4], [4, 77, 4], [8, 76, 2], [10, 74, 2], [12, 72, 4]],
+  [[0, 74, 8], [8, 69, 4], [12, 65, 4]],
+];
+const LEAD_B = [
+  [[0, 81, 6], [6, 79, 2], [8, 77, 4], [12, 72, 4]],
+  [[0, 79, 6], [6, 77, 2], [8, 74, 4], [12, 71, 4]],
+  [[0, 76, 4], [4, 79, 4], [8, 76, 2], [10, 74, 2], [12, 71, 4]],
+  [[0, 73, 4], [4, 76, 4], [8, 81, 8]],
+];
+const SONG = [
+  { chords: ['Am', 'Dm', 'Am', 'A'], lead: LEAD_A },
+  { chords: ['Am', 'Dm', 'F', 'Dm'], lead: LEAD_A2 },
+  { chords: ['F', 'G', 'Em', 'A'], lead: LEAD_B },
+  { chords: ['Am', 'Dm', 'Am', 'A'], lead: LEAD_A, fill: true },
+];
+const SONG_STEPS = SONG.length * 4 * 16;
+const BASS = [0, 0, 12, 0, 0, 0, 12, 0, 0, 0, 12, 0, 0, 12, 0, 12];
+function envGain(ac, t, vol, attack, dur) {
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + attack);
+  g.gain.setValueAtTime(vol, t + Math.max(attack, dur * 0.6)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  return g;
+}
+function lowpass(ac, hz, q) { const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = hz; f.Q.value = q || 0.7; return f; }
+function voiceLead(ac, dest, t, m, dur) { // two-operator FM, like an AdLib/OPL voice: warm, with a little vibrato
+  const f = mtof(m), car = ac.createOscillator(), mod = ac.createOscillator(), idx = ac.createGain(), lfo = ac.createOscillator(), vib = ac.createGain();
+  car.type = 'sine'; car.frequency.value = f; mod.type = 'sine'; mod.frequency.value = f;
+  idx.gain.setValueAtTime(f * 1.4, t); idx.gain.exponentialRampToValueAtTime(f * 0.35, t + dur);
+  lfo.frequency.value = 5; vib.gain.value = f * 0.005;
+  mod.connect(idx); idx.connect(car.frequency); lfo.connect(vib); vib.connect(car.frequency);
+  const lp = lowpass(ac, 2200), g = envGain(ac, t, 0.13, 0.015, dur);
+  car.connect(lp); lp.connect(g); g.connect(dest);
+  for (const o of [car, mod, lfo]) { o.start(t); o.stop(t + dur + 0.05); }
+}
+function voiceBass(ac, dest, t, m) {
+  const o = ac.createOscillator(), f = lowpass(ac, 900, 5);
+  o.type = 'sawtooth'; o.frequency.value = mtof(m);
+  f.frequency.setValueAtTime(900, t); f.frequency.exponentialRampToValueAtTime(220, t + STEP);
+  const g = envGain(ac, t, 0.11, 0.004, STEP * 0.95); o.connect(f); f.connect(g); g.connect(dest);
+  o.start(t); o.stop(t + STEP + 0.02);
+}
+function voiceArp(ac, dest, t, m) {
+  const o = ac.createOscillator(), f = lowpass(ac, 1500); o.type = 'square'; o.frequency.value = mtof(m);
+  const g = envGain(ac, t, 0.022, 0.003, STEP * 0.8); o.connect(f); f.connect(g); g.connect(dest);
+  o.start(t); o.stop(t + STEP);
+}
+function voicePad(ac, dest, t, tones, dur) { // detuned saws through a low filter, one bar long
+  const f = lowpass(ac, 750), g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.018, t + 0.4);
+  g.gain.setValueAtTime(0.018, t + dur - 0.3); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  f.connect(g); g.connect(dest);
+  for (const m of tones) for (const cents of [-7, 7]) {
+    const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mtof(m + 12); o.detune.value = cents;
+    o.connect(f); o.start(t); o.stop(t + dur + 0.05);
+  }
+}
+function voiceKick(ac, dest, t) {
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.14);
+  g.gain.setValueAtTime(0.42, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+  o.connect(g); g.connect(dest); o.start(t); o.stop(t + 0.24);
+}
+function voiceNoise(ac, dest, t, vol, hp, dur) {
+  const n = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+  n.buffer = ac === actx ? noiseBuf : (ac.__noise || (ac.__noise = makeNoise(ac)));
+  f.type = 'highpass'; f.frequency.value = hp;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  n.connect(f); f.connect(g); g.connect(dest); n.start(t); n.stop(t + dur + 0.02);
+}
+function voiceSnare(ac, dest, t, vol) {
+  voiceNoise(ac, dest, t, vol, 900, 0.16);
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = 'triangle'; o.frequency.value = 160;
+  g.gain.setValueAtTime(vol * 0.7, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
+  o.connect(g); g.connect(dest); o.start(t); o.stop(t + 0.1);
+}
+function playStep(ac, dest, step, t) {
+  const bar = Math.floor(step / 16) % (SONG.length * 4), s = step % 16, sec = SONG[Math.floor(bar / 4)], bi = bar % 4, ch = CH[sec.chords[bi]];
+  if (s === 0) voicePad(ac, dest, t, ch.tones, STEP * 16);
+  voiceBass(ac, dest, t, ch.root + BASS[s]);
+  if (s % 2 === 0) voiceArp(ac, dest, t, ch.tones[(s / 2) % 3] + 12);
+  for (const [at, m, len] of sec.lead[bi]) if (at === s) voiceLead(ac, dest, t, m, len * STEP * 0.95);
+  if (s === 0 || s === 6 || s === 8 || (bi === 3 && s === 14)) voiceKick(ac, dest, t);
+  if (s === 4 || s === 12) voiceSnare(ac, dest, t, 0.2);
+  else if (sec.fill && bi === 3 && s > 12) voiceSnare(ac, dest, t, 0.08 + 0.04 * (s - 12));
+  if (s % 2 === 0) voiceNoise(ac, dest, t, s % 4 === 2 ? 0.06 : 0.035, 7000, 0.03);
+}
+const music = { playing: false, step: 0, next: 0, timer: 0, ducked: null };
+function musicTick() {
+  if (!music.playing || !actx) return;
+  if (actx.state !== 'running') { music.next = actx.currentTime + 0.1; return; }
+  while (music.next < actx.currentTime + 0.15) {
+    playStep(actx, musicBus, music.step, music.next);
+    music.next += STEP; music.step = (music.step + 1) % SONG_STEPS;
+  }
+}
+function musicStart() {
+  if (!ensureAudio()) return;
+  Object.assign(music, { playing: true, step: 0, next: actx.currentTime + 0.1, ducked: null });
+  clearInterval(music.timer); music.timer = setInterval(musicTick, 25); musicTick();
+}
+function musicStop() {
+  music.playing = false; clearInterval(music.timer);
+  if (musicBus) musicBus.gain.setTargetAtTime(0, actx.currentTime, 0.05);
+}
+// Music plays with the sound on, quietens while a question or feedback card is open, and stops when paused or over.
+function syncMusic() {
+  const want = soundOn && audioUnlocked && !document.hidden && G.state !== 'paused' && G.state !== 'over';
+  if (want && !music.playing) musicStart(); else if (!want && music.playing) musicStop();
+  if (music.playing && musicBus) {
+    const duck = G.state === 'question' || G.state === 'card';
+    if (duck !== music.ducked) { music.ducked = duck; musicBus.gain.setTargetAtTime(duck ? 0.25 : 0.8, actx.currentTime, 0.12); }
+  }
+}
+let primed = false;
+function unlockAudio() {
+  audioUnlocked = true;
+  if (!soundOn) return;
+  // iPhones mute Web Audio when the ring/silent switch is on silent, unless the page asks to be treated as
+  // media playback (Safari 16.4 and later).
+  try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback'; } catch (e) { /* not supported */ }
+  if (ensureAudio() && !primed) {
+    // older iOS only unlocks audio once a sound has started inside a tap, so start one silent sample
+    try { const s = actx.createBufferSource(); s.buffer = actx.createBuffer(1, 1, 22050); s.connect(actx.destination); s.start(0); primed = true; } catch (e) { /* ignore */ }
+  }
+}
+// Browsers allow audio only after the viewer touches the page, so the music starts on the first tap, click or key.
+// Only events that count as a user activation on phones (not pointerdown) can unlock audio.
+for (const ev of ['touchend', 'pointerup', 'click', 'keydown']) addEventListener(ev, unlockAudio, true);
+function toggleSound() {
+  soundOn = !soundOn; store.set('sound', soundOn);
+  unlockAudio(); renderSound(); if (soundOn) sfx('good');
+  syncMusic();
+}
+function renderSound() {
+  const b = $('soundBtn'); b.textContent = soundOn ? 'Sound on' : 'Sound off'; b.setAttribute('aria-pressed', String(soundOn));
+  const m = $('menuSoundBtn'); m.textContent = soundOn ? 'Sound and music: on' : 'Sound and music: off'; m.setAttribute('aria-pressed', String(soundOn));
+}
+
+// ---------- drawing ----------
+const STARS = Array.from({ length: 46 }, () => [Math.random(), Math.random() * 0.75, Math.random()]);
+function render(time) {
+  ctx.save();
+  if (G.shake > 0 && !reduceMotion) ctx.translate((Math.random() - 0.5) * G.shake * 10, (Math.random() - 0.5) * G.shake * 8);
+  drawSky(time); drawHills(); drawGround();
+  const list = G.objs.filter((o) => o.z < Z_VIS && o.z + (o.len || 0.6) > NEAR).sort((a, b) => b.z - a.z);
+  let drawn = false;
+  for (const o of list) {
+    if (!drawn && o.z < 0.2) { drawPlayer(time); drawn = true; }
+    ctx.globalAlpha = clamp((Z_VIS - o.z) / 28, 0, 1);
+    drawObj(o, time);
+    ctx.globalAlpha = 1;
+  }
+  if (!drawn) drawPlayer(time);
+  ctx.restore();
+}
+function drawSky(time) {
+  const hz = view.horizon;
+  const g = ctx.createLinearGradient(0, 0, 0, hz);
+  g.addColorStop(0, '#0f1529'); g.addColorStop(0.5, '#33275a'); g.addColorStop(0.82, '#9a5279'); g.addColorStop(1, '#f0a35e');
+  ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, hz + 24);
+  for (const [u, v, a] of STARS) { ctx.globalAlpha = 0.25 + 0.4 * a; ctx.fillStyle = '#f3f0fb'; ctx.fillRect(u * W, v * hz * 0.7, 1.5, 1.5); }
+  // a training-loss curve drawn as a constellation
+  const x0 = W * 0.1 - cam.x * 3, x1 = W * 0.93 - cam.x * 3, y0 = Math.max(hz * 0.14, 64);
+  for (let i = 0; i <= 40; i++) {
+    const u = i / 40, x = x0 + u * (x1 - x0);
+    const y = y0 + (hz * 0.62 - y0) * (1 - Math.exp(-3.4 * u)) + hz * 0.02 * Math.sin(i * 2.3);
+    ctx.globalAlpha = reduceMotion ? 0.45 : 0.3 + 0.3 * Math.sin(time * 1.4 + i * 0.7) ** 2;
+    ctx.fillStyle = '#ffe2b3'; ctx.beginPath(); ctx.arc(x, y, 1.6, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  const sx = W * 0.5 - cam.x * 6, sy = hz - Math.min(W, H) * 0.015, r = Math.min(W, H) * 0.1;
+  const sg = ctx.createRadialGradient(sx, sy, r * 0.3, sx, sy, r * 2.4);
+  sg.addColorStop(0, 'rgba(255,214,150,0.9)'); sg.addColorStop(0.4, 'rgba(240,163,94,0.35)'); sg.addColorStop(1, 'rgba(240,163,94,0)');
+  ctx.fillStyle = sg; ctx.fillRect(sx - r * 2.4, sy - r * 2.4, r * 4.8, r * 4.8);
+  ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.fillStyle = '#ffd59a'; ctx.fill();
+}
+const HILLS = [
+  { amp: 0.15, f1: 0.0055, f2: 0.017, ph: 1.3, par: 2, col: '#6a4677' },
+  { amp: 0.1, f1: 0.0085, f2: 0.023, ph: 4.1, par: 4, col: '#4a3462' },
+  { amp: 0.065, f1: 0.012, f2: 0.031, ph: 2.2, par: 7, col: '#2c2443' },
+];
+function ridge(L, x, c) { const X = x + cam.x * L.par * 10; return view.horizon - H * L.amp * c * (0.55 + 0.3 * Math.sin(X * L.f1 + L.ph) + 0.15 * Math.sin(X * L.f2 + L.ph * 2)); }
+function drawHills() {
+  const hz = view.horizon;
+  HILLS.forEach((L, idx) => {
+    ctx.beginPath(); ctx.moveTo(-10, hz + 2);
+    for (let x = -10; x <= W + 10; x += 6) ctx.lineTo(x, ridge(L, x, 1));
+    ctx.lineTo(W + 10, hz + 2); ctx.closePath(); ctx.fillStyle = L.col; ctx.fill();
+    if (idx === 1) { // contour lines: the hills double as a loss landscape
+      ctx.strokeStyle = 'rgba(240,163,94,0.22)'; ctx.lineWidth = 1;
+      for (const c of [0.78, 0.56, 0.34]) { ctx.beginPath(); for (let x = -10; x <= W + 10; x += 8) { const y = ridge(L, x, c); if (x === -10) ctx.moveTo(x, y); else ctx.lineTo(x, y); } ctx.stroke(); }
+    }
+  });
+}
+function drawGround() {
+  const hz = view.horizon;
+  ctx.fillStyle = '#17142b'; ctx.fillRect(-20, hz, W + 40, H - hz + 20);
+  quad(P(-4.0, 0, NEAR), P(4.0, 0, NEAR), P(4.0, 0, Z_FAR), P(-4.0, 0, Z_FAR), '#221e3d');
+  quad(P(-4.7, 0, NEAR), P(-4.0, 0, NEAR), P(-4.0, 0, Z_FAR), P(-4.7, 0, Z_FAR), '#3b3360');
+  quad(P(4.0, 0, NEAR), P(4.7, 0, NEAR), P(4.7, 0, Z_FAR), P(4.0, 0, Z_FAR), '#3b3360');
+  const sp = 1.5;
+  for (let k = Math.ceil((NEAR + G.dist) / sp); ; k++) {
+    const z = k * sp - G.dist;
+    if (z > Z_VIS) break;
+    ctx.globalAlpha = clamp((Z_VIS - z) / 40, 0, 1);
+    for (let l = 0; l < 3; l++) { const x = laneX(l); quad(P(x - 0.95, 0, z), P(x + 0.95, 0, z), P(x + 0.95, 0, z + 0.32), P(x - 0.95, 0, z + 0.32), '#36315c'); }
+  }
+  ctx.globalAlpha = 1;
+  for (let l = 0; l < 3; l++) for (const off of [-0.62, 0.62]) {
+    const x = laneX(l) + off;
+    quad(P(x - 0.05, 0.02, NEAR), P(x + 0.05, 0.02, NEAR), P(x + 0.05, 0.02, Z_FAR), P(x - 0.05, 0.02, Z_FAR), '#97a3c8');
+  }
+  const fh = (view.groundY - hz) * 0.5;
+  const fg = ctx.createLinearGradient(0, hz, 0, hz + fh);
+  fg.addColorStop(0, 'rgba(240,163,94,0.5)'); fg.addColorStop(1, 'rgba(240,163,94,0)');
+  ctx.fillStyle = fg; ctx.fillRect(-20, hz, W + 40, fh);
+}
+function drawObj(o, time) {
+  switch (o.kind) {
+    case 'lamp': {
+      const x = o.side * 5.0;
+      box(x - 0.07, x + 0.07, 0, 4.2, o.z, o.z + 0.14, COL.post);
+      const [hx, hy, s] = P(x - o.side * 0.45, 4.12, o.z);
+      if (o.z > NEAR + 0.5) {
+        const glow = ctx.createRadialGradient(hx, hy, 0, hx, hy, 0.9 * s);
+        glow.addColorStop(0, 'rgba(255,213,154,0.45)'); glow.addColorStop(1, 'rgba(255,213,154,0)');
+        ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(hx, hy, 0.9 * s, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff1d6'; ctx.beginPath(); ctx.arc(hx, hy, Math.max(1, 0.13 * s), 0, Math.PI * 2); ctx.fill();
+      }
+      break;
+    }
+    case 'board': {
+      const x0 = o.side < 0 ? -9.8 : 5.9, x1 = x0 + 3.9;
+      box(x0 + 0.5, x0 + 0.65, 0, 2.0, o.z, o.z + 0.15, COL.post);
+      box(x1 - 0.65, x1 - 0.5, 0, 2.0, o.z, o.z + 0.15, COL.post);
+      const f = box(x0, x1, 2.0, 3.7, o.z, o.z + 0.2, COL.board);
+      if (f) {
+        ctx.strokeStyle = '#f0a35e'; ctx.lineWidth = Math.max(1, 0.06 * f.s); ctx.strokeRect(f.x + f.w * 0.04, f.y + f.h * 0.08, f.w * 0.92, f.h * 0.84);
+        textIn(o.text, f.x + f.w / 2, f.y + f.h / 2, f.w * 0.84, f.h * 0.42, o.text.includes('(') ? MONO : DISPLAY, o.text.includes('(') ? 700 : 400, '#f0a35e');
+      }
+      break;
+    }
+    case 'train': {
+      const x = laneX(o.lane);
+      const f = box(x - 1.0, x + 1.0, 0, 2.75, o.z, o.z + o.len, COL.train);
+      const sx = x - 1.0 > cam.x ? x - 1.0 : x + 1.0 < cam.x ? x + 1.0 : null;
+      if (sx !== null) {
+        const zn = Math.max(o.z, NEAR), zf = Math.max(o.z + o.len, NEAR + 0.01);
+        quad(P(sx, 1.55, zn), P(sx, 2.05, zn), P(sx, 2.05, zf), P(sx, 1.55, zf), '#1b2140');
+        quad(P(sx, 0.55, zn), P(sx, 0.7, zn), P(sx, 0.7, zf), P(sx, 0.55, zf), '#f0b56d');
+      }
+      if (f) {
+        ctx.fillStyle = '#1b2140'; rrect(f.x + f.w * 0.06, f.y + f.h * 0.1, f.w * 0.88, f.h * 0.44, f.w * 0.05); ctx.fill();
+        textIn(o.bug ? o.bug.name.toUpperCase() : 'BUG', f.x + f.w / 2, f.y + f.h * 0.32, f.w * 0.84, f.h * 0.38, MONO, 700, '#ffd166');
+        ctx.fillStyle = '#fff3d1';
+        for (const u of [0.2, 0.8]) { ctx.beginPath(); ctx.arc(f.x + f.w * u, f.y + f.h * 0.72, Math.max(1, f.w * 0.055), 0, Math.PI * 2); ctx.fill(); }
+        ctx.fillStyle = '#77400e'; ctx.fillRect(f.x, f.y + f.h * 0.88, f.w, f.h * 0.12);
+      }
+      break;
+    }
+    case 'barrier': {
+      const x = laneX(o.lane);
+      box(x - 1.0, x - 0.85, 0, 0.4, o.z, o.z + 0.25, COL.post);
+      box(x + 0.85, x + 1.0, 0, 0.4, o.z, o.z + 0.25, COL.post);
+      const f = box(x - 1.08, x + 1.08, 0.38, 1.0, o.z, o.z + 0.25, COL.barrier);
+      if (f) {
+        ctx.fillStyle = '#131a30'; ctx.fillRect(f.x, f.y, f.w, f.h * 0.1); ctx.fillRect(f.x, f.y + f.h * 0.9, f.w, f.h * 0.1);
+        textIn(o.bug ? o.bug.name : 'bug', f.x + f.w / 2, f.y + f.h / 2, f.w * 0.88, f.h * 0.55, MONO, 700, '#131a30');
+      }
+      break;
+    }
+    case 'coin': {
+      const [cx, cy, s] = P(laneX(o.lane), o.y, o.z);
+      const r = 0.33 * s, spin = reduceMotion ? 1 : Math.abs(Math.cos(time * 5 + o.z * 0.3));
+      ctx.beginPath(); ctx.ellipse(cx, cy, Math.max(1, r * (0.25 + 0.75 * spin)), r, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffd166'; ctx.fill(); ctx.lineWidth = Math.max(1, r * 0.14); ctx.strokeStyle = '#c7902f'; ctx.stroke();
+      if (r > 7 && spin > 0.55) textIn('∇', cx, cy + r * 0.04, r * 1.3 * spin, r * 1.2, MONO, 700, '#8a5a12');
+      break;
+    }
+    case 'gate': {
+      for (const px of [-3.7, 3.7]) box(px - 0.12, px + 0.12, 0, 3.6, o.z, o.z + 0.24, COL.gatePost);
+      box(-3.85, 3.85, 3.4, 3.7, o.z, o.z + 0.2, COL.beam);
+      const f = box(-1.3, 1.3, 2.0, 3.35, o.z + 0.02, o.z + 0.12, COL.panel);
+      if (f) {
+        ctx.strokeStyle = '#f0a35e'; ctx.lineWidth = Math.max(1, 0.06 * f.s); ctx.strokeRect(f.x, f.y, f.w, f.h);
+        textIn('?', f.x + f.w / 2, f.y + f.h * 0.54, f.w * 0.5, f.h * 0.78, DISPLAY, 400, '#ffd166');
+      }
+      break;
+    }
+    case 'row': {
+      for (let l = 0; l < 3; l++) {
+        const t = o.tokens[l];
+        if (!t || o.picked === l) continue;
+        const x = laneX(l);
+        box(x - 0.05, x + 0.05, 0, 0.8, o.z + 0.03, o.z + 0.11, COL.post);
+        const f = box(x - 1.02, x + 1.02, 0.8, 1.6, o.z, o.z + 0.08, COL.plate);
+        if (f) {
+          ctx.strokeStyle = '#ffd166'; ctx.lineWidth = Math.max(1, 0.06 * f.s); ctx.strokeRect(f.x, f.y, f.w, f.h);
+          textIn(t.text, f.x + f.w / 2, f.y + f.h / 2, f.w * 0.88, f.h * 0.5, MONO, 700, '#131a30');
+        }
+      }
+      break;
+    }
+  }
+}
+function drawPlayer(time) {
+  const [sx, sy, s] = P(player.x, player.y, 0);
+  const [gx, gy] = P(player.x, 0, 0);
+  ctx.save();
+  ctx.globalAlpha = 0.35 * (1 - Math.min(0.7, player.y / 2));
+  ctx.fillStyle = '#05060d'; ctx.beginPath(); ctx.ellipse(gx, gy, 0.75 * s, 0.2 * s, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  if (G.invuln > 0 && Math.floor(time * 12) % 2 === 0) ctx.globalAlpha = 0.45;
+  const moving = G.state === 'run' || G.state === 'menu';
+  const bob = player.y === 0 && moving && !reduceMotion ? Math.sin(time * 12) * 0.035 * s : 0;
+  ctx.translate(sx, sy - 0.12 * s + bob); ctx.rotate(player.lean);
+  const u = s;
+  ctx.fillStyle = 'rgba(86,180,233,0.32)'; ctx.beginPath(); ctx.ellipse(0, 0.06 * u, 0.82 * u, 0.15 * u, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffd166'; rrect(-0.7 * u, -0.17 * u, 1.4 * u, 0.17 * u, 0.085 * u); ctx.fill();
+  ctx.fillStyle = '#c7902f'; ctx.fillRect(-0.5 * u, -0.1 * u, 1.0 * u, 0.035 * u);
+  ctx.strokeStyle = '#2b3154'; ctx.lineWidth = 0.17 * u; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (const sg of [-1, 1]) { ctx.beginPath(); ctx.moveTo(sg * 0.22 * u, -0.2 * u); ctx.lineTo(sg * 0.3 * u, -0.56 * u); ctx.lineTo(sg * 0.14 * u, -0.95 * u); ctx.stroke(); }
+  const swing = moving && !reduceMotion ? Math.sin(time * 12) * 0.05 * u : 0;
+  ctx.strokeStyle = '#2793c9'; ctx.lineWidth = 0.14 * u;
+  for (const sg of [-1, 1]) { ctx.beginPath(); ctx.moveTo(sg * 0.28 * u, -1.45 * u); ctx.lineTo(sg * 0.6 * u, -1.12 * u + sg * swing); ctx.stroke(); }
+  ctx.fillStyle = '#56b4e9'; rrect(-0.33 * u, -1.6 * u, 0.66 * u, 0.72 * u, 0.18 * u); ctx.fill();
+  ctx.fillStyle = '#d47716'; rrect(-0.2 * u, -1.5 * u, 0.4 * u, 0.42 * u, 0.07 * u); ctx.fill();
+  if (u > 30) textIn('∇', 0, -1.29 * u, 0.3 * u, 0.3 * u, MONO, 700, '#ffd166');
+  ctx.fillStyle = '#2793c9'; ctx.beginPath(); ctx.ellipse(0, -1.58 * u, 0.27 * u, 0.12 * u, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#2a1f33'; ctx.beginPath(); ctx.arc(0, -1.8 * u, 0.21 * u, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+// ---------- input ----------
+addEventListener('keydown', (e) => {
+  const k = e.key;
+  if (G.state === 'question' && document.activeElement === $('qExit') && (k === 'Enter' || k === ' ')) return;
+  if (G.state === 'question') {
+    if (Q.mode === 'ask' && !Q.answered) {
+      if (k === '1' || k === '2' || k === '3') { e.preventDefault(); answerQ(Number(k) - 1); }
+      else if (k === 'Enter' || k === ' ') { e.preventDefault(); const i = qOptEls.indexOf(document.activeElement); if (i >= 0) answerQ(i); }
+    } else if (k === 'Enter' || k === ' ') { e.preventDefault(); continueQ(); }
+    return;
+  }
+  if (G.state === 'card') { if (k === ' ' || k === 'Enter') { e.preventDefault(); continueFromCard(); } return; }
+  if (G.state === 'paused') { if (k === 'p' || k === 'P' || k === 'Escape') { e.preventDefault(); resume(); } return; }
+  if (G.state !== 'run') return;
+  if (k === 'ArrowLeft' || k === 'a' || k === 'A') { e.preventDefault(); move(-1); }
+  else if (k === 'ArrowRight' || k === 'd' || k === 'D') { e.preventDefault(); move(1); }
+  else if (k === 'ArrowUp' || k === 'w' || k === 'W' || k === ' ') { e.preventDefault(); jump(); }
+  else if (k === 'p' || k === 'P' || k === 'Escape') { e.preventDefault(); pause(); }
+});
+let ptr = null;
+cv.addEventListener('pointerdown', (e) => { ptr = { x: e.clientX, y: e.clientY, fired: false }; try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ } });
+cv.addEventListener('pointermove', (e) => {
+  if (!ptr || ptr.fired) return;
+  const dx = e.clientX - ptr.x, dy = e.clientY - ptr.y;
+  if (Math.hypot(dx, dy) < 26) return;
+  ptr.fired = true;
+  if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 1 : -1); else if (dy < 0) jump();
+});
+cv.addEventListener('pointerup', (e) => {
+  if (!ptr) return;
+  const fired = ptr.fired; ptr = null;
+  if (fired || G.state !== 'run') return;
+  const rx = (e.clientX - cv.getBoundingClientRect().left) / W;
+  if (rx < 0.33) move(-1); else if (rx > 0.67) move(1); else jump();
+});
+cv.addEventListener('pointercancel', () => { ptr = null; });
+qOptEls.forEach((b, i) => b.addEventListener('click', () => answerQ(i)));
+$('qGo').addEventListener('click', continueQ);
+$('fbBtn').addEventListener('click', continueFromCard);
+$('cardOv').addEventListener('click', (e) => { if (e.target === e.currentTarget) continueFromCard(); });
+$('pauseBtn').addEventListener('click', pause);
+$('resumeBtn').addEventListener('click', resume);
+$('quitBtn').addEventListener('click', () => { hide('pauseOv'); gameOver(); });
+$('againBtn').addEventListener('click', startRun);
+$('copyBtn').addEventListener('click', copyResult);
+$('menuBtn').addEventListener('click', toMenu);
+$('startBtn').addEventListener('click', startRun);
+$('soundBtn').addEventListener('click', () => { toggleSound(); if (document.activeElement) document.activeElement.blur(); });
+$('menuSoundBtn').addEventListener('click', toggleSound);
+document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+addEventListener('resize', resize);
+
+// ---------- menu ----------
+function renderMenu() {
+  const wrap = $('levelChips'); wrap.replaceChildren();
+  for (const l of BANK.levels) {
+    const b = document.createElement('button'); b.type='button'; b.className='level'; b.id='level-'+l.id;
+    b.style.setProperty('--chapter',l.colour); b.setAttribute('aria-pressed',String(selectedLevels.has(l.id)));
+    const meta=document.createElement('span'); meta.className='level-meta'; meta.textContent=`LEVEL ${l.id} · CHAPTER ${l.chapter}`;
+    const title=document.createElement('b'); title.textContent=l.title;
+    const sub=document.createElement('small'); sub.textContent=l.subtitle;
+    const prog=document.createElement('span'); prog.className='progress'; const p=chapterProgress[l.id];
+    prog.textContent=(p?.completed?'✓ Completed · ':'')+(p?`Best ${p.bestPercent}% · `:'')+`${BANK.gates.filter(g=>g.level===l.id).length} questions · 3 procedures`;
+    b.append(meta,title,sub,prog);
+    b.addEventListener('click',()=>{selectedLevels=new Set([l.id]);store.set('level',l.id);renderMenu();$('level-'+l.id).focus({preventScroll:true});});
+    wrap.append(b);
+  }
+  $('modeSelect').value=runMode; $('runnerControls').hidden=runMode==='study';
+  $('startBtn').disabled=false; $('startBtn').textContent=`Start level ${[...selectedLevels][0]}`;
+  const bl=$('bestLine'); bl.hidden=!best; bl.textContent=best?`Best score on this device: ${fmt(best)}. Accuracy earns chapter badges.`:'';
+}
+$('modeSelect').addEventListener('change',()=>{runMode=$('modeSelect').value;store.set('mode',runMode);$('runnerControls').hidden=runMode==='study';});
+$('qExit').addEventListener('click',()=>{Q.answered=true;gameOver();});
+
+// ---------- bug label ----------
+const bugTag = $('bugTag');
+function updateBugTag() {
+  let best = null;
+  if (G.state === 'run') {
+    const lane = nearestLane();
+    for (const o of G.objs) if ((o.kind === 'train' || o.kind === 'barrier') && o.bug && o.lane === lane && o.z > 1.5 && o.z < 45 && (!best || o.z < best.z)) best = o;
+  }
+  if (!best) { if (!bugTag.hidden) bugTag.hidden = true; return; }
+  if (bugTag.dataset.name !== best.bug.name) { bugTag.dataset.name = best.bug.name; $('bugName').textContent = best.bug.name; }
+  const [x, y] = P(laneX(best.lane), best.kind === 'train' ? 2.75 : 1.0, best.z);
+  const half = bugTag.offsetWidth / 2 + 8;
+  const tx = Math.round(clamp(x, half, W - half)), ty = Math.round(Math.max(64, y - 10));
+  bugTag.style.transform = `translate(${tx}px, ${ty}px) translate(-50%, -100%)`;
+  bugTag.hidden = false;
+}
+
+// ---------- main loop ----------
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+  update(dt); render(now / 1000); updateBugTag(); syncMusic();
+  requestAnimationFrame(frame);
+}
+function boot(data) {
+  resize(); renderSound(); renderMenu();
+  if (document.fonts && document.fonts.load) { document.fonts.load(`700 16px ${MONO}`).catch(() => {}); document.fonts.load(`400 16px ${DISPLAY}`).catch(() => {}); }
+  requestAnimationFrame((t) => { last = t; frame(t); });
+}
+boot({});
+})();
+</script>
+</body>
+</html>
+
