@@ -7,6 +7,12 @@ The following checks were completed on the generated `index.html` and the editab
 - DOM and engine checks with jsdom: 1,258 assertions passed. These cover four complete perfect study sessions, 8/12 versus 9/12 completion thresholds, preservation of earned badges after poorer runs, stored progress on reload, chapter isolation, distinct questions and difficulty balance over 200 sampled sessions, double-answer prevention, early exits, mistake review, runner steering and jumping, pause/resume, ordered procedures, collisions, three-life defeat, unavailable local storage, and execution of drawing functions with a stubbed canvas at mobile dimensions.
 - Independent mathematical checks: map fixed points and cycle multipliers checked by finite differences; diffusion–decay profile checked against the PDE and both boundary conditions; Schnakenberg derivatives and determinant checked numerically; diffusion-dependent determinant checked by direct matrix expansion; SIR peak compared with direct time integration; SIR threshold and Fisher minimum speed checked numerically.
 
-Live browser testing and a visual assessment remain outstanding. The local environment did not contain a browser binary, its browser download was unsuccessful, and the cloud browser does not permit opening local HTML files. No claim of desktop/mobile pixel-layout validation or full assistive-technology compatibility is made. A final browser check should follow once the adaptation is accessible through GitHub Pages.
+## Live publication and browser checks
+
+GitHub Pages was enabled on 23 October 2026, serving `/docs` from `master`, with HTTPS enforced. The initial build and deployment succeeded. The GitHub Pages address redirects through the account’s existing custom domain to https://thomaswoolley.co.uk/open-learning-material/math-bio-surfers/.
+
+The live game was checked in desktop Chrome: chapter selection, study mode, a correct answer, an incorrect answer and explanatory feedback, progression to the next question, early exit, score and mistake review, return to the chapter menu, runner start, left steering, jump input and pause. The chapter menu, question panel and paused runner were inspected visually. These checks supplement the automated DOM and mathematical checks above.
+
+A complete 12-question session has been exercised in the automated DOM tests, but was not repeated manually in the live browser. Mobile pixel layout, touch interaction, all procedural challenges and full assistive-technology compatibility have not been assessed in a live browser.
 
 The checks are development checks for a revision aid. Question wording, distractors and course coverage should receive a final lecturer review before student use.
