@@ -16,3 +16,10 @@ The live game was checked in desktop Chrome: chapter selection, study mode, a co
 A complete 12-question session has been exercised in the automated DOM tests, but was not repeated manually in the live browser. Mobile pixel layout, touch interaction, all procedural challenges and full assistive-technology compatibility have not been assessed in a live browser.
 
 The checks are development checks for a revision aid. Question wording, distractors and course coverage should receive a final lecturer review before student use.
+
+## Question editor and live question-bank loading
+
+The editor adds 50 passing DOM checks covering changes to wording, answers and explanations; choosing the correct answer; preview feedback; adding and duplicating items with unique identifiers; deletion and undo without losing later edits; procedural-step ordering; misconception feedback; safe JSON and standalone HTML exports; draft restoration and warnings about newer published content; invalid imports; minimum chapter sizes; and recovery from a failed initial fetch through file import.
+
+The live-bank loader adds 27 passing checks covering server content replacing the embedded bank, updated chapter counts, bypassing browser caching, disabling start while loading, and visible playable backup behaviour after invalid content, HTTP errors, network failure or malformed JSON. Downloaded offline games do not fetch a remote bank. The original 1,258 session checks and 50 independent mathematical checks continue to pass.
+

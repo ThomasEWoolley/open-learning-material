@@ -2,7 +2,8 @@
 
 A chapter-based revision game for Thomas E. Woolley’s Mathematical Biology course, adapted from Oliver Maclaren’s Gradient Surfers.
 
-- [Play Math Bio Surfers](https://ThomasEWoolley.github.io/open-learning-material/math-bio-surfers/)
+- [Play Math Bio Surfers](https://thomaswoolley.co.uk/open-learning-material/math-bio-surfers/)
+- [Edit the questions](https://thomaswoolley.co.uk/open-learning-material/math-bio-surfers/editor.html)
 - [Game source, instructions and editable question bank](docs/math-bio-surfers/)
 - [Content review and source clarifications](docs/math-bio-surfers/CONTENT_REVIEW.md)
 

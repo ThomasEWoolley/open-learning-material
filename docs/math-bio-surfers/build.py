@@ -34,7 +34,10 @@ if __name__ == '__main__':
     data = validate(json.loads((ROOT/'questions.json').read_text()))
     template = (ROOT/'game.template.html').read_text()
     assert template.count('__QUESTION_BANK__') == 1
+    assert template.count('__BANK_TOOLS__') == 1
     # Escape '<' to prevent a future question containing </script> closing the JSON block.
     payload = json.dumps(data, ensure_ascii=False, separators=(',', ':')).replace('<', '\\u003c')
+    template = template.replace('__BANK_TOOLS__', (ROOT/'bank-tools.js').read_text())
     (ROOT/'index.html').write_text(template.replace('__QUESTION_BANK__', payload))
     print(f'Built index.html: {len(data["gates"])} questions, {len(data["sequences"])} procedures, {len(data["levels"])} levels')
+

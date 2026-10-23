@@ -331,6 +331,8 @@ body.study-session #qOv { background: #0f1529ed; }
         <li><kbd>P</kbd> to pause. On a phone you can also tap the left, middle or right of the track.</li>
       </ul>
       <p class="fine" id="bestLine" hidden></p>
+      <p class="fine"><a href="editor.html">Edit the questions</a></p>
+      <p class="fine" id="bankLoadStatus" role="status" hidden></p>
       <details class="tutorial"><summary>Introduction &amp; how to play</summary><p>Chapter 1 introduces the aim: use mathematical models to understand biological systems, test assumptions and predict behaviour. Analytical reasoning helps us interpret simulations.</p><p>Runner: steer with ← and →, then jump low barriers with ↑ or Space. Questions pause the run. You have three lives; a wrong answer, collision or out-of-order step costs one. Read the feedback before continuing.</p><p>Study: work through 12 questions without a timer or life penalty. Both modes show explanations and sections to revisit. Completed levels and your best accuracy are saved on this device.</p><p>A completion badge means 9 or more correct answers in a full 12-question session. It is a revision milestone. Use written problems to practise longer derivations.</p></details>
       <p class="attribution">Course notes: Thomas E. Woolley, based on notes by Eamonn A. Gaffney. Game engine adapted from <a href="https://github.com/omaclaren/open-learning-material/tree/master/docs/engsci-205/2026/gradient-surfers">Oliver Maclaren’s Gradient Surfers</a> under the MIT licence. <a href="CONTENT_REVIEW.md">Content and source notes</a>.</p>
     </div>
@@ -406,10 +408,13 @@ __QUESTION_BANK__
 </script>
 
 <script>
+__BANK_TOOLS__
+</script>
+<script>
 (() => {
 'use strict';
 const $ = (id) => document.getElementById(id);
-const BANK = JSON.parse($('bank').textContent);
+let BANK = JSON.parse($('bank').textContent);
 const LEVELS = BANK.levels.map(l => [l.id, l.title]);
 const SLOGANS = ['CHECK THE UNITS', 'FIND THE STEADY STATES', 'FOLLOW THE NULLCLINES', 'MIND THE BOUNDARIES', 'TEST THE ASSUMPTIONS', 'CHECK THE ALLOWED MODES', 'MODEL · TEST · PREDICT'];
 
@@ -1500,7 +1505,8 @@ function renderMenu() {
     const title=document.createElement('b'); title.textContent=l.title;
     const sub=document.createElement('small'); sub.textContent=l.subtitle;
     const prog=document.createElement('span'); prog.className='progress'; const p=chapterProgress[l.id];
-    prog.textContent=(p?.completed?'✓ Completed · ':'')+(p?`Best ${p.bestPercent}% · `:'')+`${BANK.gates.filter(g=>g.level===l.id).length} questions · 3 procedures`;
+    const procedures=BANK.sequences.filter(g=>g.level===l.id).length;
+    prog.textContent=(p?.completed?'✓ Completed · ':'')+(p?`Best ${p.bestPercent}% · `:'')+`${BANK.gates.filter(g=>g.level===l.id).length} questions · ${procedures} ${procedures===1?'procedure':'procedures'}`;
     b.append(meta,title,sub,prog);
     b.addEventListener('click',()=>{selectedLevels=new Set([l.id]);store.set('level',l.id);renderMenu();$('level-'+l.id).focus({preventScroll:true});});
     wrap.append(b);
@@ -1541,9 +1547,29 @@ function boot(data) {
   if (document.fonts && document.fonts.load) { document.fonts.load(`700 16px ${MONO}`).catch(() => {}); document.fonts.load(`400 16px ${DISPLAY}`).catch(() => {}); }
   requestAnimationFrame((t) => { last = t; frame(t); });
 }
-boot({});
+async function loadBankAndBoot() {
+  if (/^https?:$/.test(location.protocol) && typeof fetch === 'function') {
+    const button = $('startBtn'); button.disabled = true; button.textContent = 'Loading questions…';
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const timeout = controller ? setTimeout(() => controller.abort(), 6000) : null;
+    try {
+      const response = await fetch('questions.json', {cache:'no-store', ...(controller ? {signal:controller.signal} : {})});
+      if (!response.ok) throw new Error('Question bank request failed');
+      const latest = await response.json();
+      const problems = window.MathBioBank.validateBank(latest);
+      if (problems.length) throw new Error(problems[0]);
+      BANK = latest;
+    } catch (error) {
+      const status = $('bankLoadStatus'); status.hidden = false;
+      status.textContent = 'The latest question bank could not be loaded. This session uses the built-in backup. Refresh the page to try again.';
+    } finally { if (timeout !== null) clearTimeout(timeout); }
+  }
+  boot({});
+}
+loadBankAndBoot();
 })();
 </script>
 </body>
 </html>
+
 
